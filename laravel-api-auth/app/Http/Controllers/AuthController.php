@@ -12,33 +12,6 @@ use Illuminate\Support\Facades\Validator; // Add this import
 class AuthController extends Controller
 {
     /**
-     * Register a new user
-     */
-    public function register(AuthRequest $request) {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        $token = $user->createToken('App')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'created_at' => $user->created_at,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 201);
-    }
-
-    /**
      * Login user
      */
     public function login(AuthRequest $request) {
@@ -126,15 +99,23 @@ class AuthController extends Controller
     /**
      * Change user password
      */
-    public function changePassword(Request $request) // Changed from AuthRequest to Request
+    public function changePassword(Request $request)
     {
         $user = $request->user();
-
-        $validator = Validator::make($request->all(), [
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-            'new_password_confirmation' => 'required',
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'current_password' => 'required',
+                'new_password' => 'required|min:6|confirmed',
+                'new_password_confirmation' => 'required',
+            ],
+            [],
+            [
+                'current_password' => '現在のパスワード',
+                'new_password' => '新しいパスワード',
+                'new_password_confirmation' => '新しいパスワード（確認）',
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -142,31 +123,28 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        // Check if current password matches
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Current password is incorrect'
+                'message' => '現在のパスワードが正しくありません。'
             ], 422);
         }
 
-        // Check if new password is same as old password
         if (Hash::check($request->new_password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'New password cannot be the same as old password'
+                'message' => '新しいパスワードは現在のパスワードと同じにはできません。'
             ], 422);
         }
 
-        // Update password
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Password changed successfully'
+            'message' => 'パスワードが正常に変更されました。'
         ]);
     }
+
 }

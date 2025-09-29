@@ -1,7 +1,189 @@
+import React, { useState, useEffect } from "react";
+import {
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress
+} from "@mui/material";
+import { studentApi, schoolApi } from "../../services/ApiService";
+import { useNavigate } from "react-router-dom";
+
 export default function StudentCreate() {
-    return(
-        <>
-        <h1>Student Create</h1>
-        </>
-    );
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [schools, setSchools] = useState([]);
+
+  const [formData, setFormData] = useState({
+    school_id: "",
+    roll_no: "",
+    name: "",
+    email: "",
+    nrc_no: "",
+    phone: "",
+    major: "",
+    year: "",
+    iq_score: ""
+  });
+
+  // fetch schools for dropdown
+  useEffect(() => {
+    schoolApi.getAll().then((res) => {
+      if (res.data.success) {
+        setSchools(res.data.data);
+      }
+    });
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setFieldErrors({});
+
+    try {
+      const response = await studentApi.create(formData);
+
+      if (response.data.success) {
+        setSuccess("Student created successfully!");
+        setTimeout(() => navigate("/dashboard/studentList"), 2000);
+      } else {
+        setError(response.data.message || "Failed to create student");
+      }
+    } catch (error) {
+      console.error("Student creation error:", error);
+      if (error.response?.status === 422 && error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setError(error.response.data.message || "Validation failed.");
+      } else {
+        setError("Failed to create student. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box p={3}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">
+          新しい学生作成
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/dashboard/studentList')}
+          disabled={loading}
+        >
+          戻る
+        </Button>
+      </Box>
+
+      <Paper elevation={3} sx={{ p: 4 }}>
+        {success && <Alert severity="success">{success}</Alert>}
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          {/* School Dropdown */}
+          <FormControl fullWidth margin="normal">
+            <InputLabel>学校</InputLabel>
+            <Select
+              name="school_id"
+              label="school"
+              value={formData.school_id}
+              onChange={handleChange}
+              error={!!fieldErrors.school_id}
+            >
+              {schools.map((school) => (
+                <MenuItem key={school.id} value={school.id}>
+                  {school.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField fullWidth label="ロール番号" name="roll_no"
+            value={formData.roll_no} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.roll_no}
+            helperText={fieldErrors.roll_no} />
+
+          <TextField fullWidth label="名前" name="name"
+            value={formData.name} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.name}
+            helperText={fieldErrors.name} />
+
+          <TextField fullWidth label="メールアドレス" name="email" type="email"
+            value={formData.email} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.email}
+            helperText={fieldErrors.email} />
+
+          <TextField fullWidth label="NRC番号" name="nrc_no"
+            value={formData.nrc_no} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.nrc_no}
+            helperText={fieldErrors.nrc_no} />
+
+          <TextField fullWidth label="電話番号" name="phone"
+            value={formData.phone} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.phone}
+            helperText={fieldErrors.phone} />
+
+          <TextField fullWidth label="専攻" name="major"
+            value={formData.major} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.major}
+            helperText={fieldErrors.major} />
+
+          <TextField fullWidth label="学生年" name="year"
+            value={formData.year} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.year}
+            helperText={fieldErrors.year} />
+
+          <TextField fullWidth label="IQスコア" name="iq_score" type="number"
+            value={formData.iq_score} onChange={handleChange}
+            margin="normal" error={!!fieldErrors.iq_score}
+            helperText={fieldErrors.iq_score || "0–100"} />
+
+            <Box
+                sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "center" }}
+            >
+                <Button
+                variant="contained"
+                sx={{
+                    backgroundColor: "#606060",
+                    minWidth: 100,
+                }}
+                onClick={() => navigate("/dashboard/studentList")}
+                disabled={loading}
+                >
+                キャンセル
+                </Button>
+                <Button
+                type="submit"
+                variant="contained"
+                sx={{ minWidth: 100 }}
+                disabled={loading}
+                >
+                {loading ? <CircularProgress size={24} /> : "学生作成"}
+                </Button>
+            </Box>
+        </Box>
+      </Paper>
+    </Box>
+  );
 }

@@ -21,17 +21,9 @@ class AuthRequest extends FormRequest
      */
     public function rules(): array
     {
-        if ($this->is('api/login')) {
-            return [
-                'email' => 'required|email',
-                'password' => 'required|string|min:6|max:8',
-            ];
-        }
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|max:8|confirmed',
-            'password_confirmation' => 'required|string|min:6|max:8',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string',
         ];
     }
 

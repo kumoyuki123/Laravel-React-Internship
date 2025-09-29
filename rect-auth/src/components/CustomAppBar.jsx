@@ -23,13 +23,12 @@ import Tooltip from '@mui/material/Tooltip';
 import Avatar from '@mui/material/Avatar';
 import SchoolIcon from '@mui/icons-material/School';
 import BadgeIcon from '@mui/icons-material/Badge';
-import ListIcon from '@mui/icons-material/List';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AccessAlarmsIcon from '@mui/icons-material/AccessAlarms';
 import Groups2Icon from '@mui/icons-material/Groups2';
 import ChecklistIcon from '@mui/icons-material/Checklist';
-import EditIcon from '@mui/icons-material/Edit';
-import InfoIcon from '@mui/icons-material/Info';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import ExpandLess from '@mui/icons-material/ExpandLess';
@@ -126,13 +125,21 @@ const settings = ['Profile','Theme','Logout'];
 // Navigation items for the drawer
 const navItems = [
   { 
+    text: 'ユーザー管理', 
+    icon: <AccountCircleIcon />, 
+    path: null,
+    children: [
+      { text: 'ユーザー覧', icon: <ChecklistIcon />, path: '/dashboard/userList' },
+      { text: 'ユーザー作成', icon: <AddCircleIcon />, path: '/dashboard/userCreate' },
+    ]
+  },
+  { 
     text: '学生情報', 
     icon: <Groups2Icon />, 
     path: null,
     children: [
       { text: '学生一覧', icon: <ChecklistIcon />, path: '/dashboard/studentList' },
-      { text: '学生作成・編集', icon: <PersonAddIcon />, path: '/dashboard/studentCreate' },
-      { text: 'Student Edit', icon: <EditIcon />, path: '/dashboard/studentEdit' },
+      { text: '学生作成', icon: <PersonAddIcon />, path: '/dashboard/studentCreate' },
     ]
   },
   { 
@@ -141,8 +148,7 @@ const navItems = [
     path: null,
     children: [
       { text: '大学一覧', icon: <ChecklistIcon />, path: '/dashboard/schoolList' },
-      { text: '大学作成・編集', icon: <ApartmentIcon />, path: '/dashboard/schoolCreate' },
-      { text: 'Schools Edit', icon: <EditIcon />, path: '/dashboard/schoolEdit' },
+      { text: '大学作成', icon: <ApartmentIcon />, path: '/dashboard/schoolCreate' },
     ]
   },
   { 
@@ -151,7 +157,6 @@ const navItems = [
     path: null,
     children: [
       { text: '従業員一覧', icon: <ChecklistIcon />, path: '/dashboard/employeeList' },
-      { text: '従業員編集', icon: <EditIcon />, path: '/dashboard/employeeEdit' },
     ]
   },
   { 
@@ -160,7 +165,7 @@ const navItems = [
     path: null,
     children: [
       { text: '出席者一覧', icon: <ChecklistIcon />, path: '/dashboard/attendenceList' },
-      { text: 'Attendence Create', icon: <NoteAddIcon />, path: '/dashboard/attendenceCreate' },
+      { text: '出席者作成', icon: <NoteAddIcon />, path: '/dashboard/attendenceCreate' },
     ]
   },
 ];
@@ -220,14 +225,9 @@ export default function MiniDrawer() {
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Even if logout API fails, clear local state and redirect
-      navigate('/');
-    }
+    // Immediately clear local state and redirect without waiting for API
+    logout(); // Don't await - let it run in background
+    navigate('/');
   };
 
   return (
@@ -375,7 +375,7 @@ export default function MiniDrawer() {
           color: '#fff',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 20, pl: 2 }}>Control List</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: 20, paddingLeft: 8 }}>管理設定</Typography>
           <IconButton onClick={handleDrawerClose}>
             {theme.direction === 'rtl' ? 
               <ChevronRightIcon sx={{color: '#fff'}} /> : 
@@ -428,7 +428,7 @@ export default function MiniDrawer() {
                           px: 2.5,
                           pl: open ? 4 : 2.5,
                           justifyContent: open ? 'initial' : 'center',
-                          backgroundColor: location.pathname === child.path ? 'rgba(0, 0, 0, 0.2)' : 'inherit',
+                          backgroundColor: location.pathname === child.path ? 'rgba(255, 255, 255, 0.2)' : 'inherit',
                           color: '#fff',
                           '&:hover': {
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',

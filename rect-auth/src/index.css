@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -71,4 +73,20 @@ body {
 /* Ensure form elements inherit the font */
 input, button, textarea, select {
   font-family: inherit;
+}
+
+.login-button {
+  background-color: rgba(92, 155, 16, 0.7);
+  padding: 12px 16px;
+  color: white;
+  border-radius: 6px;
+  width: 200px;
+  font-size: 16px;
+  font-family: 'Noto Serif', serif;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: rgba(92, 155, 16, 0.9) !important;
 }

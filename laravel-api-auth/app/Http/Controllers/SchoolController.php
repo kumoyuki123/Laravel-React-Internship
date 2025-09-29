@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\SchoolRequest;
 use App\Models\School;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,7 +15,6 @@ class SchoolController extends Controller
     public function index()
     {
         $schools = School::with(['students', 'employees'])
-                        ->orderBy('created_at', 'desc')
                         ->get();
 
         return response()->json([
@@ -26,22 +26,9 @@ class SchoolController extends Controller
     /**
      * Create a new school
      */
-    public function store(Request $request)
+    public function store(SchoolRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'teacher_name' => 'required|string|max:255',
-            'teacher_email' => 'required|email|unique:schools,teacher_email'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $school = School::create($validator->validated());
+        $school = School::create($request->validated());
 
         return response()->json([
             'success' => true,
@@ -73,7 +60,7 @@ class SchoolController extends Controller
     /**
      * Update a school
      */
-    public function update(Request $request, $id)
+    public function update(SchoolRequest $request, $id)
     {
         $school = School::find($id);
 
@@ -84,20 +71,7 @@ class SchoolController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'teacher_name' => 'required|string|max:255',
-            'teacher_email' => 'required|email|unique:schools,teacher_email,' . $school->id
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $school->update($validator->validated());
+        $school->update($request->validated());
 
         return response()->json([
             'success' => true,

@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { register, login, logout } from '../services/AuthService';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { login, logout } from '../services/AuthService';
 
 const AuthContext = createContext();
 
@@ -43,15 +43,14 @@ export const AuthProvider = ({ children }) => {
   const authLogin = async (email, password) => {
     try {
       const response = await login({ email, password });
+      console.log(response);
 
       if (response.data.success) {
         const { user: newUser, token: authToken } = response.data.data;
-
-        // Add default values for missing fields
         const userWithDefaults = {
           ...newUser,
-          role: newUser.role || 'leader', // Default role
-          avatar: newUser.avatar || null,   // Default avatar
+          role: newUser.role || 'leader',
+          avatar: newUser.avatar || null,
         };
 
         setToken(authToken);
@@ -80,51 +79,6 @@ export const AuthProvider = ({ children }) => {
       return {
         success: false,
         error: errorData?.message || "Login failed",
-        fieldErrors: {},
-      };
-    }
-  };
-
-  const authRegister = async (userData) => {
-    try {
-      const response = await register(userData);
-      
-      if (response.data.success) {
-        const { user: newUser, token: authToken } = response.data.data;
-        
-        // Add default values for missing fields
-        const userWithDefaults = {
-          ...newUser,
-          role: newUser.role || 'leader',
-          avatar: newUser.avatar || null,
-        };
-        
-        setUser(userWithDefaults);
-        setToken(authToken);
-        
-        localStorage.setItem('user', JSON.stringify(userWithDefaults));
-        localStorage.setItem('token', authToken);
-        
-        return { success: true };
-      } else {
-        return { 
-          success: false, 
-          error: response.data.message || 'Registration failed' 
-        };
-      }
-    } catch (error) {
-      const errorData = error.response?.data;
-      if (errorData?.errors) {
-        return {
-          success: false,
-          error: "入力内容を確認してください",
-          fieldErrors: errorData.errors,
-        };
-      }
-
-      return {
-        success: false,
-        error: errorData?.message || "Registration failed",
         fieldErrors: {},
       };
     }
@@ -165,17 +119,16 @@ export const AuthProvider = ({ children }) => {
   const isLeader = () => hasRole('leader');
 
   const canManageUsers = () => isSuperuser();
-  const canManageSchools = () => isSuperuser() || isHrAdmin() || isSupervisor();
-  const canManageStudents = () => isSuperuser() || isHrAdmin() || isSupervisor() || isLeader();
-  const canManageEmployees = () => isSuperuser() || isHrAdmin() || isSupervisor();
-  const canManageAttendance = () => isSuperuser() || isHrAdmin() || isSupervisor() || isLeader();
+  const canManageSchools = () => isSuperuser() || isHrAdmin();
+  const canManageStudents = () => isSuperuser() || isHrAdmin();
+  const canManageEmployees = () => isSuperuser() || isSupervisor() || isLeader();
+  const canManageAttendance = () => isSuperuser() || isSupervisor() || isLeader();
 
   const value = {
     user,
     token,
     loading,
     login: authLogin,
-    register: authRegister,
     logout: authLogout,
     updateUser,
     isAuthenticated: !!user && !!token,

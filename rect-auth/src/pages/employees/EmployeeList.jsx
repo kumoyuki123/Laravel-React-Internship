@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
   Alert,
@@ -35,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { employeeApi } from '../../services/ApiService';
+import ErrorIcon from "@mui/icons-material/Error";
 
 export default function EmployeeList() {
   const { canManageEmployees } = useAuth();
@@ -124,7 +126,7 @@ export default function EmployeeList() {
   const handleSubmit = async () => {
     try {
       await employeeApi.update(editingEmployee.id, formData);
-      showSnackbar('Employee updated successfully');
+      showSnackbar('従業員が正常に更新されました。');
       fetchEmployees();
       handleCloseDialog();
     } catch (error) {
@@ -147,7 +149,7 @@ export default function EmployeeList() {
   const handleDeleteConfirm = async () => {
     try {
       await employeeApi.delete(employeeToDelete.id);
-      showSnackbar('Employee deleted successfully');
+      showSnackbar('従業員が正常に削除されました。');
       fetchEmployees();
     } catch (error) {
       console.error('Error deleting employee:', error);
@@ -187,18 +189,6 @@ export default function EmployeeList() {
     page * rowsPerPage + rowsPerPage
   );
 
-  const getJpLevelColor = (level) => {
-    if (!level) return 'default';
-    switch (level.toUpperCase()) {
-      case 'N1': return 'error';
-      case 'N2': return 'warning';
-      case 'N3': return 'info';
-      case 'N4': return 'success';
-      case 'N5': return 'primary';
-      default: return 'default';
-    }
-  };
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -212,9 +202,9 @@ export default function EmployeeList() {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center" gap={2}>
-          <Work color="primary" />
+          <Work color="primary" sx={{ fontSize: 40 }} />
           <Typography variant="h4" component="h1">
-            Employees Management
+            従業員管理
           </Typography>
         </Box>
       </Box>
@@ -223,7 +213,7 @@ export default function EmployeeList() {
       <Box mb={3}>
         <TextField
           fullWidth
-          placeholder="Search employees by student name, school, JP level, or skills..."
+          placeholder="検索..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -242,13 +232,14 @@ export default function EmployeeList() {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell><strong>Student Name</strong></TableCell>
-              <TableCell><strong>School</strong></TableCell>
-              <TableCell><strong>IQ Score</strong></TableCell>
-              <TableCell><strong>JP Level</strong></TableCell>
-              <TableCell><strong>Skills & Languages</strong></TableCell>
-              <TableCell><strong>Created Date</strong></TableCell>
-              {canManageEmployees() && <TableCell><strong>Actions</strong></TableCell>}
+              <TableCell><strong>ID</strong></TableCell>
+              <TableCell><strong>学生名</strong></TableCell>
+              <TableCell><strong>大学名</strong></TableCell>
+              <TableCell><strong>IQスコア</strong></TableCell>
+              <TableCell><strong>日本語レベル</strong></TableCell>
+              <TableCell><strong>プログラム言語</strong></TableCell>
+              <TableCell><strong>作成日</strong></TableCell>
+              {canManageEmployees() && <TableCell><strong>アクション</strong></TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -256,13 +247,16 @@ export default function EmployeeList() {
               <TableRow>
                 <TableCell colSpan={canManageEmployees() ? 7 : 6} align="center">
                   <Typography color="textSecondary" py={4}>
-                    {searchTerm ? 'No employees found matching your search.' : 'No employees available.'}
+                    {searchTerm ? '検索条件に一致する従業員は見つかりませんでした。': '利用可能な従業員がいません。'}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               paginatedEmployees.map((employee) => (
                 <TableRow key={employee.id} hover>
+                  <TableCell>
+                    {employee.id}
+                  </TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Person fontSize="small" />
@@ -294,7 +288,7 @@ export default function EmployeeList() {
                       <Chip
                         label={employee.jp_level}
                         size="small"
-                        color={getJpLevelColor(employee.jp_level)}
+                        color="primary"
                         variant="filled"
                       />
                     ) : (
@@ -320,7 +314,7 @@ export default function EmployeeList() {
                   {canManageEmployees() && (
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Tooltip title="Edit Employee Skills">
+                        <Tooltip title="従業員のスキルを編集する">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenDialog(employee)}
@@ -329,7 +323,7 @@ export default function EmployeeList() {
                             <Edit />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete Employee">
+                        <Tooltip title="従業員を削除">
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteClick(employee)}
@@ -361,77 +355,139 @@ export default function EmployeeList() {
 
       {/* Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Edit Employee Skills - {editingEmployee?.student?.name}
+        <DialogTitle sx={{ textAlign: 'center', fontSize: 24, fontWeight: 'bold', pb: 1 }}>
+          スキル編集 - {editingEmployee?.student?.name}
         </DialogTitle>
         <DialogContent>
           <Box pt={1}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="body2" color="textSecondary" mb={2}>
-                  Student: {editingEmployee?.student?.name} | 
-                  School: {editingEmployee?.school?.name} | 
-                  IQ Score: {editingEmployee?.iq_score}/100
+            {/* Student Info Section */}
+            <Box sx={{ 
+              backgroundColor: 'rgba(0, 0, 0, 0.04)', 
+              p: 2, 
+              borderRadius: 1, 
+              mb: 3,
+              border: '1px solid rgba(0, 0, 0, 0.12)'
+            }}>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{fontSize:20}}>
+                学生情報
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="body2">
+                  <strong>名前:</strong> {editingEmployee?.student?.name}
                 </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Japanese Level"
-                  value={formData.jp_level}
-                  onChange={(e) => handleInputChange('jp_level', e.target.value)}
-                  error={!!formErrors.jp_level}
-                  helperText={formErrors.jp_level}
-                  SelectProps={{
-                    native: true,
-                  }}
-                >
-                  <option value="">Select JP Level</option>
-                  <option value="N5">N5 (Beginner)</option>
-                  <option value="N4">N4 (Elementary)</option>
-                  <option value="N3">N3 (Intermediate)</option>
-                  <option value="N2">N2 (Upper Intermediate)</option>
-                  <option value="N1">N1 (Advanced)</option>
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Skills & Programming Languages"
-                  multiline
-                  rows={4}
-                  value={formData.skill_language}
-                  onChange={(e) => handleInputChange('skill_language', e.target.value)}
-                  error={!!formErrors.skill_language}
-                  helperText={formErrors.skill_language || 'e.g., PHP, JavaScript, Python, React, Laravel'}
-                  placeholder="Enter programming languages, frameworks, and technical skills..."
-                />
-              </Grid>
-            </Grid>
+                <Typography variant="body2">
+                  <strong>大学:</strong> {editingEmployee?.school?.name}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>IQ スコア:</strong> {editingEmployee?.iq_score}/100
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Japanese Level Field */}
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                select
+                label="日本語レベル"
+                value={formData.jp_level}
+                onChange={(e) => handleInputChange('jp_level', e.target.value)}
+                error={!!formErrors.jp_level}
+                helperText={formErrors.jp_level ? formErrors.jp_level[0] : ''}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value="">日本語レベルを選択</option>
+                <option value="N5">N5 (初心者)</option>
+                <option value="N4">N4 (初級)</option>
+                <option value="N3">N3 (中級)</option>
+                <option value="N2">N2 (中上級)</option>
+                <option value="N1">N1 (上級)</option>
+              </TextField>
+            </Box>
+
+            {/* Skills Field */}
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                label="スキル & プログラミング言語"
+                multiline
+                rows={4}
+                value={formData.skill_language}
+                onChange={(e) => handleInputChange('skill_language', e.target.value)}
+                error={!!formErrors.skill_language}
+                helperText={formErrors.skill_language ? formErrors.skill_language[0] : '例: PHP, JavaScript, Python, React, Laravel'}
+                placeholder="プログラミング言語、フレームワーク、技術スキルを入力..."
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    alignItems: 'flex-start'
+                  }
+                }}
+              />
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            Update
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 3 }}>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#606060",
+              minWidth: 100,
+            }}
+            onClick={handleCloseDialog}
+          >
+            キャンセル
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            variant="contained" 
+            sx={{ minWidth: 100 }}
+          >
+            更新する
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={handleDeleteCancel}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ textAlign: "center", py: 2 }}>
+          本当に削除しますか？
+        </DialogTitle>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+          <ErrorIcon color="error" sx={{ fontSize: 40 }} />
+        </Box>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete employee record for "{employeeToDelete?.student?.name}"? 
-            This will not delete the student record.
-          </Typography>
+          {" "}
+          <DialogContentText component="div" className="text-center">
+            学生『{employeeToDelete?.student?.name}』を削除してもよろしいですか？
+            <br />
+            これにより、関連する従業員および出席記録も削除されます。
+          </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Delete
+        <DialogActions sx={{ justifyContent: "center", gap: 2, p: 3 }}>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#606060",
+              minWidth: 100,
+            }}
+            onClick={handleDeleteCancel}
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            sx={{ minWidth: 100 }}
+          >
+            削除
           </Button>
         </DialogActions>
       </Dialog>

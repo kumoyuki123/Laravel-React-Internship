@@ -10,7 +10,6 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AttendenceController;
 
 // Public routes
-Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 // Protected routes (require authentication)
@@ -24,9 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('profile', [AuthController::class, 'update']);
     Route::put('profile/change-password', [AuthController::class, 'changePassword']);
 
+    Route::get('users', [UserController::class, 'index']);
     // User management routes (only for superuser)
     Route::middleware('role:superuser')->group(function () {
-        Route::get('users', [UserController::class, 'index']);
         Route::post('users', [UserController::class, 'store']);
         Route::put('users/{id}', [UserController::class, 'update']);
         Route::delete('users/{id}', [UserController::class, 'destroy']);
@@ -43,11 +42,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Student routes
     Route::get('students', [StudentController::class, 'index']);
+    Route::get('students/export', [StudentController::class, 'export']);
     Route::get('students/{id}', [StudentController::class, 'show']);
     Route::middleware('role:superuser,hr_admin,supervisor,leader')->group(function () {
         Route::post('students', [StudentController::class, 'store']);
         Route::put('students/{id}', [StudentController::class, 'update']);
         Route::delete('students/{id}', [StudentController::class, 'destroy']);
+        Route::post('students/import', [StudentController::class, 'import']);
     });
 
     // Employee routes

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Footer from "../components/footer";
-import { Link, useNavigate } from "react-router-dom";
+import Footer from "../components/Footer";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -102,10 +102,9 @@ export default function Login() {
                     <button 
                         type="submit" 
                         disabled={isLoading}
-                        className={`w-40 m-auto block py-3 px-4 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 font-sans ${
+                        className={` login-button w-40 m-auto block py-3 px-4 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 font-sans ${
                             isLoading ? "opacity-50 cursor-not-allowed" : ""
                         }`}
-                        style={{ backgroundColor: 'rgba(92, 155, 16, 0.82)' }}
                     >
                         {isLoading ? "ログイン中..." : "ログイン"}
                     </button>
@@ -117,17 +116,6 @@ export default function Login() {
                         </div>
                     )}
                 </form>
-                <div className="text-center mt-2">
-                    <small className="text-gray-600 text-lg font-bold">
-                        初めての方は{" "}
-                        <Link
-                        to="/register" 
-                        className="text-green-600 hover:text-green-800 hover:underline transition-colors"
-                        >
-                        新規会員登録
-                        </Link>
-                    </small>
-                </div>
             </div>
             <Footer></Footer>
         </>

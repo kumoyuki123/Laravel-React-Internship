@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   TextField,
   Alert,
@@ -35,6 +36,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { schoolApi } from '../../services/ApiService';
 import { useNavigate } from 'react-router-dom';
+import ErrorIcon from "@mui/icons-material/Error";
 
 export default function SchoolList() {
   const { canManageSchools } = useAuth();
@@ -95,22 +97,13 @@ export default function SchoolList() {
   };
 
   // Dialog handlers
-  const handleOpenDialog = (school = null) => {
-    if (school) {
-      setEditingSchool(school);
-      setFormData({
-        name: school.name,
-        teacher_name: school.teacher_name,
-        teacher_email: school.teacher_email
-      });
-    } else {
-      setEditingSchool(null);
-      setFormData({
-        name: '',
-        teacher_name: '',
-        teacher_email: ''
-      });
-    }
+  const handleOpenDialog = (school) => {
+    setEditingSchool(school);
+    setFormData({
+      name: school.name,
+      teacher_name: school.teacher_name,
+      teacher_email: school.teacher_email
+    });
     setFormErrors({});
     setOpenDialog(true);
   };
@@ -130,43 +123,24 @@ export default function SchoolList() {
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) errors.name = 'School name is required';
-    if (!formData.teacher_name.trim()) errors.teacher_name = 'Teacher name is required';
-    if (!formData.teacher_email.trim()) {
-      errors.teacher_email = 'Teacher email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.teacher_email)) {
-      errors.teacher_email = 'Please enter a valid email address';
-    }
-    return errors;
-  };
-
   const handleSubmit = async () => {
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
+    setFormErrors({});
 
     try {
-      if (editingSchool) {
-        await schoolApi.update(editingSchool.id, formData);
-        showSnackbar('School updated successfully');
-      } else {
-        await schoolApi.create(formData);
-        showSnackbar('School created successfully');
-      }
+      await schoolApi.update(editingSchool.id, formData);
+      showSnackbar('大学が正常に更新されました。');
       fetchSchools();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving school:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to save school';
-      showSnackbar(errorMessage, 'error');
       
-      // Handle validation errors
+      // Handle Laravel validation errors
       if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
+        showSnackbar('フォームのエラーを修正してください。', 'error');
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to save school';
+        showSnackbar(errorMessage, 'error');
       }
     }
   };
@@ -180,7 +154,7 @@ export default function SchoolList() {
   const handleDeleteConfirm = async () => {
     try {
       await schoolApi.delete(schoolToDelete.id);
-      showSnackbar('School deleted successfully');
+      showSnackbar('大学は正常に削除されました。');
       fetchSchools();
     } catch (error) {
       console.error('Error deleting school:', error);
@@ -230,21 +204,26 @@ export default function SchoolList() {
   return (
     <Box p={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Box display="flex" alignItems="center" gap={2}>
-          <School color="primary" />
+          <School color="primary" sx={{ fontSize: 40 }} />
           <Typography variant="h4" component="h1">
-            Schools Management
+            大学管理
           </Typography>
         </Box>
         {canManageSchools() && (
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => handleOpenDialog()}
+            onClick={() => navigate("/dashboard/schoolCreate")}
             sx={{ minWidth: 140 }}
           >
-            Add School
+            学校追加
           </Button>
         )}
       </Box>
@@ -253,7 +232,7 @@ export default function SchoolList() {
       <Box mb={3}>
         <TextField
           fullWidth
-          placeholder="Search schools by name, teacher name, or email..."
+          placeholder="検索..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -271,14 +250,33 @@ export default function SchoolList() {
       <TableContainer component={Paper} elevation={2}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell><strong>School Name</strong></TableCell>
-              <TableCell><strong>Teacher Name</strong></TableCell>
-              <TableCell><strong>Teacher Email</strong></TableCell>
-              <TableCell><strong>Students</strong></TableCell>
-              <TableCell><strong>Employees</strong></TableCell>
-              <TableCell><strong>Created Date</strong></TableCell>
-              {canManageSchools() && <TableCell><strong>Actions</strong></TableCell>}
+            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableCell>
+                <strong>ID</strong>
+              </TableCell>
+              <TableCell>
+                <strong>学校名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>教師名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>教師メールアドレス</strong>
+              </TableCell>
+              <TableCell>
+                <strong>学生数</strong>
+              </TableCell>
+              <TableCell>
+                <strong>社会員数</strong>
+              </TableCell>
+              <TableCell>
+                <strong>作成日</strong>
+              </TableCell>
+              {canManageSchools() && (
+                <TableCell>
+                  <strong>アクション</strong>
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -286,13 +284,16 @@ export default function SchoolList() {
               <TableRow>
                 <TableCell colSpan={canManageSchools() ? 7 : 6} align="center">
                   <Typography color="textSecondary" py={4}>
-                    {searchTerm ? 'No schools found matching your search.' : 'No schools available.'}
+                    {searchTerm
+                      ? "No schools found matching your search."
+                      : "No schools available."}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               paginatedSchools.map((school) => (
                 <TableRow key={school.id} hover>
+                  <TableCell>{school.id}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight="bold">
                       {school.name}
@@ -307,6 +308,10 @@ export default function SchoolList() {
                       size="small"
                       color="primary"
                       variant="outlined"
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                      }}
                     />
                   </TableCell>
                   <TableCell>
@@ -316,6 +321,10 @@ export default function SchoolList() {
                       size="small"
                       color="secondary"
                       variant="outlined"
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                      }}
                     />
                   </TableCell>
                   <TableCell>
@@ -324,7 +333,7 @@ export default function SchoolList() {
                   {canManageSchools() && (
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Tooltip title="Edit School">
+                        <Tooltip title="学校を編集">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenDialog(school)}
@@ -333,7 +342,7 @@ export default function SchoolList() {
                             <Edit />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete School">
+                        <Tooltip title="学校を削除">
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteClick(school)}
@@ -350,7 +359,7 @@ export default function SchoolList() {
             )}
           </TableBody>
         </Table>
-        
+
         {/* Pagination */}
         <TablePagination
           component="div"
@@ -364,62 +373,110 @@ export default function SchoolList() {
       </TableContainer>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingSchool ? 'Edit School' : 'Add New School'}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{ textAlign: "center", fontSize: 24, fontWeight: "bold", pb: 1 }}
+        >
+          学校編集
         </DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
             <TextField
               fullWidth
-              label="School Name"
+              label="学校名"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               error={!!formErrors.name}
-              helperText={formErrors.name}
-              required
+              helperText={formErrors.name ? formErrors.name[0] : ''}
             />
             <TextField
               fullWidth
-              label="Teacher Name"
+              label="教師名"
               value={formData.teacher_name}
-              onChange={(e) => handleInputChange('teacher_name', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("teacher_name", e.target.value)
+              }
               error={!!formErrors.teacher_name}
-              helperText={formErrors.teacher_name}
-              required
+              helperText={formErrors.teacher_name ? formErrors.teacher_name[0] : ''}
             />
             <TextField
               fullWidth
-              label="Teacher Email"
+              label="教師メールアドレス"
               type="email"
               value={formData.teacher_email}
-              onChange={(e) => handleInputChange('teacher_email', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("teacher_email", e.target.value)
+              }
               error={!!formErrors.teacher_email}
-              helperText={formErrors.teacher_email}
-              required
+              helperText={formErrors.teacher_email ? formErrors.teacher_email[0] : ''}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingSchool ? 'Update' : 'Create'}
+        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#606060",
+              minWidth: 100,
+            }}
+            onClick={handleCloseDialog}
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            sx={{ minWidth: 100 }}
+          >
+            更新する
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={handleDeleteCancel}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ textAlign: "center", py: 2 }}>
+          本当に削除しますか？
+        </DialogTitle>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+          <ErrorIcon color="error" sx={{ fontSize: 40 }} />
+        </Box>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete "{schoolToDelete?.name}"? This action cannot be undone.
-          </Typography>
+          {" "}
+          <DialogContentText component="div" className="text-center">
+            大学『{schoolToDelete?.name}』を削除してもよろしいですか？
+            <br />
+            これにより、関連する従業員および出席記録も削除されます。
+          </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Delete
+        <DialogActions sx={{ justifyContent: "center", gap: 2, p: 3 }}>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#606060",
+              minWidth: 100,
+            }}
+            onClick={handleDeleteCancel}
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            sx={{ minWidth: 100 }}
+          >
+            削除
           </Button>
         </DialogActions>
       </Dialog>
@@ -429,7 +486,7 @@ export default function SchoolList() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={handleCloseSnackbar}

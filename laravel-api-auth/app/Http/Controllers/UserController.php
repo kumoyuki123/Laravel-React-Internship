@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\UserRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +16,6 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::select('id', 'name', 'email', 'role', 'created_at')
-                    ->orderBy('created_at', 'desc')
                     ->get();
 
         return response()->json([
@@ -27,38 +27,24 @@ class UserController extends Controller
     /**
      * Create a new user (only superuser can create HR admin, supervisor, leader)
      */
-    public function store(Request $request)
+    public function store(UserRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'role' => 'required|in:hr_admin,supervisor,leader'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'name'     => $request->validated()['name'],
+            'email'    => $request->validated()['email'],
+            'password' => Hash::make($request->validated()['password']),
+            'role'     => $request->validated()['role'],
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'User created successfully',
-            'data' => [
+            'data'    => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
-                'created_at' => $user->created_at,
+                'created_at' => $user->created_at
             ]
         ], 201);
     }
@@ -66,10 +52,10 @@ class UserController extends Controller
     /**
      * Update user
      */
-    public function update(Request $request, $id)
+    public function update(UserRequest $request, $id)
     {
         $user = User::find($id);
-        
+
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -77,7 +63,6 @@ class UserController extends Controller
             ], 404);
         }
 
-        // Prevent updating superuser
         if ($user->isSuperuser()) {
             return response()->json([
                 'success' => false,
@@ -85,31 +70,12 @@ class UserController extends Controller
             ], 403);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:hr_admin,supervisor,leader'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user->update($validator->validated());
+        $user->update($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'User updated successfully',
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'updated_at' => $user->updated_at,
-            ]
+            'data'    => $user
         ]);
     }
 

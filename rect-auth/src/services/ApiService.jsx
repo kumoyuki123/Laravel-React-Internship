@@ -38,6 +38,15 @@ api.interceptors.response.use(
   }
 );
 
+// User API (for superuser only)
+export const userApi = {
+  getAll: () => api.get('/users'),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
 // School API
 export const schoolApi = {
   getAll: () => api.get('/schools'),
@@ -53,13 +62,20 @@ export const studentApi = {
   getById: (id) => api.get(`/students/${id}`),
   create: (data) => api.post('/students', data),
   update: (id, data) => api.put(`/students/${id}`, data),
-  delete: (id) => api.delete(`/students/${id}`)
+  delete: (id) => api.delete(`/students/${id}`),
+  exportStudents: () => api.get('/students/export', { 
+    responseType: 'blob'
+  }),
+  importStudents: (formData) => api.post('/students/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
 
 // Employee API
 export const employeeApi = {
   getAll: () => api.get('/employees'),
-  getById: (id) => api.get(`/employees/${id}`),
   update: (id, data) => api.put(`/employees/${id}`, data),
   delete: (id) => api.delete(`/employees/${id}`)
 };
@@ -73,14 +89,6 @@ export const attendanceApi = {
   create: (data) => api.post('/attendances', data),
   update: (id, data) => api.put(`/attendances/${id}`, data),
   delete: (id) => api.delete(`/attendances/${id}`)
-};
-
-// User API (for superuser only)
-export const userApi = {
-  getAll: () => api.get('/users'),
-  create: (data) => api.post('/users', data),
-  update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`)
 };
 
 export default api;

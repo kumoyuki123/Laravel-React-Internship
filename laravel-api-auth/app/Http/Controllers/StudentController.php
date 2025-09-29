@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StudentRequest;
 use App\Models\Student;
 use App\Models\School;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\StudentsExport;
+use App\Imports\StudentsImport;
+use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
@@ -17,7 +22,6 @@ class StudentController extends Controller
     public function index()
     {
         $students = Student::with(['school', 'employee', 'attendances'])
-                          ->orderBy('created_at', 'desc')
                           ->get();
 
         return response()->json([
@@ -29,32 +33,13 @@ class StudentController extends Controller
     /**
      * Create a new student
      */
-    public function store(Request $request)
+    public function store(StudentRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'school_id' => 'required|exists:schools,id',
-            'roll_no' => 'required|string|max:50|unique:students,roll_no',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:students,email',
-            'nrc_no' => 'required|string|max:100|unique:students,nrc_no',
-            'phone' => 'required|string|max:20',
-            'major' => 'required|string|max:100',
-            'year' => 'required|string|max:50',
-            'iq_score' => 'required|integer|min:0|max:100'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         DB::beginTransaction();
         
         try {
             // Create student
-            $student = Student::create($validator->validated());
+            $student = Student::create($request->validated());
 
             // Auto-create employee if IQ score >= 60
             if ($student->iq_score >= 60) {
@@ -110,7 +95,7 @@ class StudentController extends Controller
     /**
      * Update a student
      */
-    public function update(Request $request, $id)
+    public function update(StudentRequest $request, $id)
     {
         $student = Student::find($id);
 
@@ -121,25 +106,6 @@ class StudentController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'school_id' => 'required|exists:schools,id',
-            'roll_no' => 'required|string|max:50|unique:students,roll_no,' . $student->id,
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:students,email,' . $student->id,
-            'nrc_no' => 'required|string|max:100|unique:students,nrc_no,' . $student->id,
-            'phone' => 'required|string|max:20',
-            'major' => 'required|string|max:100',
-            'year' => 'required|string|max:50',
-            'iq_score' => 'required|integer|min:0|max:100'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         DB::beginTransaction();
         
         try {
@@ -147,7 +113,7 @@ class StudentController extends Controller
             $newIqScore = $request->iq_score;
             
             // Update student
-            $student->update($validator->validated());
+            $student->update($request->validated());
 
             // Handle employee creation/deletion based on IQ score change
             if ($oldIqScore < 60 && $newIqScore >= 60) {
@@ -224,6 +190,69 @@ class StudentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete student: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Student Data Export [Download]
+     */
+    public function export()
+    {
+        try {
+            $filename = 'students_' . now()->format('Y-m-d') . '.xlsx';
+            
+            return Excel::download(new StudentsExport, $filename);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Export failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Import students from Excel/CSV
+     */
+    public function import(Request $request)
+    {
+        // Validate the file
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $import = new StudentsImport();
+            
+            // Import the file
+            Excel::import($import, $request->file('file'));
+            
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Students imported successfully',
+                'rows_imported' => $import->getRowCount(),
+                'skipped_rows' => $import->getSkippedRows()
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Student import failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
             ], 500);
         }
     }

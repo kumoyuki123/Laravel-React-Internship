@@ -29,9 +29,6 @@ return [
     'mimes' => ':attributeは:values形式のファイルでなければなりません。',
     'exists' => '選択された:attributeは無効です。',
     'regex' => ':attributeの形式が正しくありません。',
-    'required_if' => ':otherが:valueの場合、:attributeは必須です。',
-    'required_with' => ':valuesが存在する場合、:attributeは必須です。',
-    'required_without' => ':valuesが存在しない場合、:attributeは必須です。',
     'same' => ':attributeと:otherが一致しません。',
     'size' => [
         'string' => ':attributeは:size文字で入力してください。',
@@ -45,29 +42,35 @@ return [
         'name' => '名前',
         'email' => 'メールアドレス',
         'password' => 'パスワード',
-        'password_confirmation' => 'パスワード確認',
         'confirm_password' => 'パスワード確認',
-        'title' => 'タイトル',
-        'content' => '内容',
-        'body' => '本文',
         'phone' => '電話番号',
         'address' => '住所',
         'birth_date' => '生年月日',
         'age' => '年齢',
-        'price' => '価格',
-        'quantity' => '数量',
-        'category_id' => 'カテゴリー',
         'status' => 'ステータス',
         'description' => '説明',
         'image' => '画像',
         'file' => 'ファイル',
         'url' => 'URL',
-        'first_name' => '名',
-        'last_name' => '姓',
-        'username' => 'ユーザー名',
         'role' => '役割',
         'permissions' => '権限',
-        'remember_me' => 'ログイン状態を保持',
-        // Add more attributes as needed for your project
+
+        // Student attributes
+        'roll_no' => '学籍番号',
+        'nrc_no' => 'NRC番号',
+        'major' => '専攻',
+        'year' => '学年',
+        'iq_score' => 'IQスコア',
+        
+        // School attributes
+        'teacher_name' => '教師名',
+        'teacher_email' => '教師メールアドレス',
+        
+        // Attendance attributes
+        'date' => '日付',
+        'status' => 'ステータス',
+        'check_in_time' => 'チェックイン時間',
+        'start_date' => '開始日',
+        'end_date' => '終了日',
     ],
 ];

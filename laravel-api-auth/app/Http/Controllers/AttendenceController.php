@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\AttendanceRequest;
 use App\Models\Attendence;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,8 +15,6 @@ class AttendenceController extends Controller
     public function index()
     {
         $attendances = Attendence::with(['student', 'student.school'])
-                                ->orderBy('date', 'desc')
-                                ->orderBy('check_in_time', 'desc')
                                 ->get();
 
         return response()->json([
@@ -27,22 +26,8 @@ class AttendenceController extends Controller
     /**
      * Create a new attendance record
      */
-    public function store(Request $request)
+    public function store(AttendanceRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'student_id' => 'required|exists:students,id',
-            'date' => 'required|date',
-            'status' => 'required|in:present,absent,late',
-            'check_in_time' => 'nullable|date_format:H:i:s'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         // Check if attendance already exists for this student on this date
         $existingAttendance = Attendence::where('student_id', $request->student_id)
                                       ->where('date', $request->date)
@@ -55,7 +40,7 @@ class AttendenceController extends Controller
             ], 422);
         }
 
-        $attendance = Attendence::create($validator->validated());
+        $attendance = Attendence::create($request->validated());
 
         // Load relationships for response
         $attendance->load(['student', 'student.school']);
@@ -90,7 +75,7 @@ class AttendenceController extends Controller
     /**
      * Update an attendance record
      */
-    public function update(Request $request, $id)
+    public function update(AttendanceRequest $request, $id)
     {
         $attendance = Attendence::find($id);
 
@@ -101,19 +86,7 @@ class AttendenceController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:present,absent,late',
-            'check_in_time' => 'nullable|date_format:H:i:s'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $attendance->update($validator->validated());
+        $attendance->update($request->validated());
 
         // Load relationships for response
         $attendance->load(['student', 'student.school']);
@@ -166,21 +139,8 @@ class AttendenceController extends Controller
     /**
      * Get attendance records by date range
      */
-    public function getByDateRange(Request $request)
+    public function getByDateRange(AttendanceRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'student_id' => 'nullable|exists:students,id'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $query = Attendence::with(['student', 'student.school'])
                           ->whereBetween('date', [$request->start_date, $request->end_date]);
 

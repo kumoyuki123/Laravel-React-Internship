@@ -85,30 +85,22 @@ const Profile = () => {
 
           <Divider sx={{ my: 2 }} />
 
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="subtitle2">名前</Typography>
-              <Typography variant="body1">{user?.name || 'N/A'}</Typography>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle2">メールアドレス</Typography>
-              <Typography variant="body1">{user?.email || 'N/A'}</Typography>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="subtitle2">メンバー登録日</Typography>
-              <Typography variant="body1">
-                {user?.created_at
-                  ? new Date(user.created_at).toLocaleDateString('ja-JP', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
-                  : 'N/A'}
-              </Typography>
-            </Grid>
-          </Grid>
+          <Typography variant="subtitle2" sx={{fontSize: 16, fontWeight: 'bold'}}>名前</Typography>
+          <Typography variant="body1">{user?.name || 'N/A'}</Typography>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="subtitle2"  sx={{fontSize: 16, fontWeight: 'bold'}}>メールアドレス</Typography>
+          <Typography variant="body1">{user?.email || 'N/A'}</Typography>
+          <Divider sx={{ my: 1 }} />
+          <Typography variant="subtitle2"  sx={{fontSize: 16, fontWeight: 'bold'}}>メンバー登録日</Typography>
+          <Typography variant="body1">
+            {user?.created_at
+              ? new Date(user.created_at).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+              : 'N/A'}
+          </Typography>
 
           <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Button

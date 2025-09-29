@@ -14,7 +14,6 @@ class EmployeeController extends Controller
     public function index()
     {
         $employees = Employee::with(['student', 'school'])
-                           ->orderBy('created_at', 'desc')
                            ->get();
 
         return response()->json([
