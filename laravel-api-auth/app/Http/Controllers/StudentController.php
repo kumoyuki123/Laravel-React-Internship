@@ -35,6 +35,7 @@ class StudentController extends Controller
      */
     public function store(StudentRequest $request)
     {
+        \Log::info($request);
         DB::beginTransaction();
         
         try {
@@ -216,44 +217,36 @@ class StudentController extends Controller
      */
     public function import(Request $request)
     {
-        // Validate the file
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
-
         DB::beginTransaction();
-
         try {
             $import = new StudentsImport();
-            
-            // Import the file
             Excel::import($import, $request->file('file'));
-            
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Students imported successfully',
-                'rows_imported' => $import->getRowCount(),
-                'skipped_rows' => $import->getSkippedRows()
+                'skipped_rows' => $import->getSkippedRows(),
             ], 200);
 
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Student import failed: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
-            ], 500);
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
 }

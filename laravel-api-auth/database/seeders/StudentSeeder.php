@@ -15,34 +15,7 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get MIIT school
-        $miitSchool = School::where('name', 'MIIT')->first();
-        
-        if ($miitSchool) {
-            // Create the student mentioned in requirements
-            $student = Student::create([
-                'school_id' => $miitSchool->id,
-                'roll_no' => '9',
-                'name' => 'Phyu Phyu',
-                'email' => 'phyuphyu@gmail.com',
-                'nrc_no' => '9/MaHaMa(N)456456',
-                'phone' => '09-979789609',
-                'major' => 'EC',
-                'year' => 'First Year',
-                'iq_score' => 69,
-            ]);
-
-            // Since IQ score is 69 (>= 60), automatically create employee
-            Employee::create([
-                'student_id' => $student->id,
-                'school_id' => $student->school_id,
-                'iq_score' => $student->iq_score,
-                'jp_level' => null,
-                'skill_language' => null,
-            ]);
-        }
-
-        // Create additional test students
+        // Create additional test students for all schools
         $schools = School::all();
         
         foreach ($schools as $school) {

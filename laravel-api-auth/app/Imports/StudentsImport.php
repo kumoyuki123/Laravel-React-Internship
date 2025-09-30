@@ -1,127 +1,178 @@
 <?php
-
 namespace App\Imports;
 
-use App\Models\Student;
-use App\Models\School;
 use App\Models\Employee;
+use App\Models\School;
+use App\Models\Student;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Events\BeforeImport;
-use Illuminate\Validation\Rule;
 
-class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, SkipsOnFailure, WithBatchInserts, WithChunkReading, SkipsEmptyRows
+class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, SkipsOnFailure, WithBatchInserts, WithChunkReading, SkipsEmptyRows, WithEvents
 {
     use SkipsFailures;
 
-    private $rows = 0;
+    private $rows        = 0;
     private $skippedRows = [];
-    private $schoolsMap = [];
+    private $schoolsMap  = [];
 
     public function collection(Collection $rows)
     {
-        // Reset counters
-        $this->rows = 0;
-        $this->skippedRows = [];
-        
-        // 1. Get unique school names and prepare schools
         $this->prepareSchools($rows);
-        
-        // 2. Process each row
         foreach ($rows as $index => $row) {
+            $rowNumber = $index + 1; // +1 for header, +1 for 0-based index
             try {
-                $this->processRow($row, $index + 2); // +2 because: 1 for header, 1 for 0-based index
+                $this->processRow($row, $rowNumber);
             } catch (\Exception $e) {
+                // Catch any validation errors we throw manually
                 $this->skippedRows[] = [
-                    'row' => $index + 2,
+                    'row'    => $rowNumber,
                     'errors' => [$e->getMessage()],
-                    'values' => $row->toArray()
+                    'values' => $row->toArray(),
                 ];
                 continue;
             }
         }
     }
 
+    /**
+     * Reset counters once at the beginning of the import.
+     */
+    public function registerEvents(): array
+    {
+        return [
+            BeforeImport::class => function () {
+                $this->rows        = 0;
+                $this->skippedRows = [];
+                $this->schoolsMap  = [];
+            },
+        ];
+    }
+
     private function prepareSchools(Collection $rows)
     {
         $schoolNames = $rows->pluck('school')->unique()->filter();
-        
+
         if ($schoolNames->isEmpty()) {
             return;
         }
 
-        // Find existing schools
-        $existingSchools = School::whereIn('name', $schoolNames)->get();
-        foreach ($existingSchools as $school) {
-            $this->schoolsMap[$school->name] = $school->id;
-        }
+        $existingSchools  = School::whereIn('name', $schoolNames)->pluck('id', 'name');
+        $this->schoolsMap = $existingSchools->toArray();
 
-        // Create new schools
-        $newSchoolNames = $schoolNames->diff(array_keys($this->schoolsMap));
-        
+        $newSchoolNames = $schoolNames->diff($existingSchools->keys());
+
         foreach ($newSchoolNames as $schoolName) {
             $school = School::create([
-                'name' => $schoolName,
-                'teacher_name' => 'Default Teacher',
+                'name'          => $schoolName,
+                'teacher_name'  => 'Default Teacher',
                 'teacher_email' => null,
             ]);
             $this->schoolsMap[$schoolName] = $school->id;
         }
     }
 
+    /**
+     * --- UPDATED LOGIC WITH PROPER VALIDATION ---
+     */
     private function processRow($row, $rowNumber)
     {
-        // Validate required fields
         $requiredFields = ['school', 'roll_no', 'name', 'email', 'nrc_no', 'phone', 'major', 'year', 'iq_score'];
         foreach ($requiredFields as $field) {
-            if (!isset($row[$field]) || empty($row[$field])) {
-                throw new \Exception("Field '{$field}' is required");
+            if (empty($row[$field])) {
+                throw new \Exception("Field '{$field}' is required and cannot be empty.");
             }
         }
-
         $schoolId = $this->schoolsMap[$row['school']] ?? null;
-        
-        if (!$schoolId) {
-            throw new \Exception("School '{$row['school']}' not found or could not be created");
+        if (! $schoolId) {
+            throw new \Exception("School '{$row['school']}' not found.");
         }
-
-        // Prepare student data
         $studentData = [
             'school_id' => $schoolId,
-            'roll_no'   => (string) $row['roll_no'],
-            'name'      => $row['name'],
-            'nrc_no'    => $row['nrc_no'],
-            'email'     => $row['email'],
-            'phone'     => (string) $row['phone'],
-            'major'     => $row['major'],
-            'year'      => (string) $row['year'],
+            'roll_no'   => trim((string) $row['roll_no']),
+            'name'      => trim((string) $row['name']),
+            'nrc_no'    => trim((string) $row['nrc_no']),
+            'email'     => trim((string) $row['email']),
+            'phone'     => trim((string) $row['phone']),
+            'major'     => trim((string) $row['major']),
+            'year'      => trim((string) $row['year']),
             'iq_score'  => (int) $row['iq_score'],
         ];
 
-        // Check if student exists
-        $existingStudent = Student::where('email', $studentData['email'])->first();
+        $existingByNrc    = Student::where('nrc_no', $studentData['nrc_no'])->first();
+        $existingByEmail  = Student::where('email', $studentData['email'])->first();
+        $existingByRollNo = Student::where('school_id', $schoolId)
+            ->where('year', $studentData['year'])
+            ->where('roll_no', $studentData['roll_no'])
+            ->first();
 
-        if ($existingStudent) {
-            // Update existing student
-            $existingStudent->update($studentData);
-            $student = $existingStudent;
-        } else {
-            // Create new student
-            $student = Student::create($studentData);
+        // Case 1: Same NRC AND same email AND same data = Duplicate import
+        if ($existingByNrc && $existingByEmail &&
+            $existingByNrc->id === $existingByEmail->id &&
+            $this->isSameStudentData($existingByNrc, $studentData)) {
+            throw new \Exception("Duplicate data occurred!");
         }
 
-        // Handle employee record
+        // Case 2: Same NRC but different email (conflict)
+        if ($existingByNrc && $existingByEmail && $existingByNrc->id !== $existingByEmail->id) {
+            throw new \Exception("NRC Number '{$studentData['nrc_no']}' belongs to one student but email '{$studentData['email']}' belongs to another student.");
+        }
+
+        // Case 3: Same NRC but email belongs to different student
+        if ($existingByNrc && $existingByEmail && $existingByNrc->id !== $existingByEmail->id) {
+            throw new \Exception("NRC Number is same record!");
+        }
+
+        // Case 4: Same email but NRC belongs to different student
+        if ($existingByEmail && $existingByNrc && $existingByEmail->id !== $existingByNrc->id) {
+            throw new \Exception("Email is same record!");
+        }
+
+        // Case 5: Same roll number in same school and year (for new student or different student)
+        if ($existingByRollNo) {
+            // If this is a different student trying to use same roll number
+            if ((! $existingByNrc || $existingByNrc->id !== $existingByRollNo->id) &&
+                (! $existingByEmail || $existingByEmail->id !== $existingByRollNo->id)) {
+                throw new \Exception("Roll Number '{$studentData['roll_no']}' already exists for school '{$row['school']}' in year '{$studentData['year']}'.");
+            }
+        }
+
+        if ($existingByNrc) {
+            $existingByNrc->update($studentData);
+            $student = $existingByNrc;
+        } elseif ($existingByEmail) {
+            $existingByEmail->update($studentData);
+            $student = $existingByEmail;
+        } else {
+            $student = Student::create($studentData);
+        }
         $this->handleEmployee($student);
 
         $this->rows++;
+    }
+
+    /**
+     * Check if the existing student data matches the import data
+     */
+    private function isSameStudentData($existingStudent, $newData)
+    {
+        return $existingStudent->school_id == $newData['school_id'] &&
+        $existingStudent->roll_no == $newData['roll_no'] &&
+        $existingStudent->name == $newData['name'] &&
+        $existingStudent->email == $newData['email'] &&
+        $existingStudent->nrc_no == $newData['nrc_no'] &&
+        $existingStudent->phone == $newData['phone'] &&
+        $existingStudent->major == $newData['major'] &&
+        $existingStudent->year == $newData['year'] &&
+        $existingStudent->iq_score == $newData['iq_score'];
     }
 
     private function handleEmployee(Student $student)
@@ -129,30 +180,28 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
         $existingEmployee = $student->employee;
 
         if ($student->iq_score >= 60) {
+            $employeeData = [
+                'student_id' => $student->id,
+                'school_id'  => $student->school_id,
+                'iq_score'   => $student->iq_score,
+            ];
+
             if ($existingEmployee) {
-                // Update existing employee
-                $existingEmployee->update([
-                    'school_id' => $student->school_id,
-                    'iq_score' => $student->iq_score
-                ]);
+                $existingEmployee->update($employeeData);
             } else {
-                // Create new employee
-                Employee::create([
-                    'student_id' => $student->id,
-                    'school_id' => $student->school_id,
-                    'iq_score' => $student->iq_score,
-                    'jp_level' => null,
-                    'skill_language' => null
+                Employee::create($employeeData + [
+                    'jp_level'       => null,
+                    'skill_language' => null,
                 ]);
             }
         } elseif ($existingEmployee) {
-            // Delete employee if IQ score is below 60
             $existingEmployee->delete();
         }
     }
 
     public function rules(): array
     {
+        // These rules are good for basic format validation before processing
         return [
             '*.school'   => ['required', 'string', 'max:255'],
             '*.roll_no'  => ['required', 'string', 'max:50'],
@@ -174,11 +223,6 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
     public function chunkSize(): int
     {
         return 100;
-    }
-
-    public function getRowCount(): int
-    {
-        return $this->rows;
     }
 
     public function getSkippedRows(): array

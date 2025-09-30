@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -23,8 +23,11 @@ import {
   InputAdornment,
   Tooltip,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
   DialogContentText,
-  CircularProgress, // Fixed import - from @mui/material
+  CircularProgress,
 } from "@mui/material";
 import {
   Add,
@@ -42,6 +45,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import { useAuth } from "../../contexts/AuthContext";
 import { studentApi, schoolApi } from "../../services/ApiService";
 import { useNavigate } from "react-router-dom";
+import { nrcCodes, nrcTownships, nrcTypes } from "../../constants/nrcConstants";
 
 export default function StudentList() {
   const navigate = useNavigate();
@@ -76,6 +80,12 @@ export default function StudentList() {
     iq_score: "",
   });
   const [formErrors, setFormErrors] = useState({});
+  const [nrc, setNrc] = useState({
+    nrcCode: "",
+    nrcTownship: "",
+    nrcType: "",
+    nrcNumber: "",
+  });
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -127,17 +137,41 @@ export default function StudentList() {
   // Dialog handlers
   const handleOpenDialog = (student) => {
     setEditingStudent(student);
+
+    // Parse NRC
+    const nrcString = student.nrc_no || "";
+    const nrcRegex = /^(\d{1,2})\/([A-Za-z]+)\(([NPET])\)(\d{6})$/;
+    const match = nrcString.match(nrcRegex);
+
+    if (match) {
+      setNrc({
+        nrcCode: match[1],
+        nrcTownship: match[2],
+        nrcType: match[3],
+        nrcNumber: match[4],
+      });
+    } else {
+      // Reset if NRC is not in the expected format or is empty
+      setNrc({
+        nrcCode: "",
+        nrcTownship: "",
+        nrcType: "",
+        nrcNumber: "",
+      });
+    }
+
+    // Set other form data, excluding nrc_no
     setFormData({
       school_id: student.school_id || "",
       roll_no: student.roll_no || "",
       name: student.name || "",
       email: student.email || "",
-      nrc_no: student.nrc_no || "",
       phone: student.phone || "",
       major: student.major || "",
       year: student.year || "",
       iq_score: student.iq_score || "",
     });
+
     setFormErrors({});
     setOpenDialog(true);
   };
@@ -167,11 +201,22 @@ export default function StudentList() {
     }
   };
 
+  const handleNrcChange = (e) => {
+    const { name, value } = e.target;
+    setNrc((prev) => ({ ...prev, [name]: value }));
+    if (formErrors.nrc_no) {
+      setFormErrors((prev) => ({ ...prev, nrc_no: "" }));
+    }
+  };
+
   const handleSubmit = async () => {
     setFormErrors({});
 
     try {
-      await studentApi.update(editingStudent.id, formData);
+      const fullNrc = `${nrc.nrcCode}/${nrc.nrcTownship}(${nrc.nrcType})${nrc.nrcNumber}`;
+      const submissionData = { ...formData, nrc_no: fullNrc };
+
+      await studentApi.update(editingStudent.id, submissionData);
       showSnackbar("学生の更新に成功しました。");
       fetchStudents();
       handleCloseDialog();
@@ -205,8 +250,9 @@ export default function StudentList() {
         const link = document.createElement("a");
         link.href = url;
         const contentDisposition = response.headers["content-disposition"];
-        let filename = `students_${new Date().toISOString().split("T")[0]
-          }.xlsx`;
+        let filename = `students_${
+          new Date().toISOString().split("T")[0]
+        }.xlsx`;
         if (contentDisposition) {
           const filenameMatch = contentDisposition.match(/filename="(.+)"/);
           if (filenameMatch) {
@@ -231,7 +277,7 @@ export default function StudentList() {
           const errorJson = JSON.parse(errorText);
           showSnackbar(
             "エクスポートに失敗しました: " +
-            (errorJson.message || "Server error"),
+              (errorJson.message || "Server error"),
             "error"
           );
         } catch (e) {
@@ -243,7 +289,7 @@ export default function StudentList() {
       } else {
         showSnackbar(
           "エクスポートに失敗しました: " +
-          (error.response?.data?.message || error.message),
+            (error.response?.data?.message || error.message),
           "error"
         );
       }
@@ -253,6 +299,7 @@ export default function StudentList() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     // Validate file type
     const allowedTypes = [
       "application/vnd.ms-excel",
@@ -285,45 +332,26 @@ export default function StudentList() {
       const { data } = response;
 
       if (data.success && data.skipped_rows?.length > 0) {
-        // Success with some validation errors
+        // Partial success with skipped rows
         setImportErrors(data.skipped_rows);
         setImportErrorDialogOpen(true);
-        showSnackbar(data.message, "warning");
+        showSnackbar("一部のデータはスキップされました。", "warning");
       } else {
         // Full success
         showSnackbar(data.message, "success");
       }
 
-      fetchStudents(); // Refresh the list
-
+      fetchStudents(); // Refresh student list
     } catch (error) {
       console.error("Import failed:", error);
       const responseData = error.response?.data;
 
-      if (responseData && responseData.errors) {
-        // Laravel validation exception from the controller's validate()
-        const messages = Object.values(responseData.errors).flat();
-        setImportErrors(
-          messages.map((m, i) => ({
-            row: i + 1,
-            errors: [m],
-          }))
-        );
-        setImportErrorDialogOpen(true);
-        showSnackbar(responseData.message || "Import failed due to validation errors.", "error");
-      } else if (responseData && responseData.skipped_rows) {
-        // Validation exception from Maatwebsite
-        setImportErrors(
-          responseData.skipped_rows.map((row, i) => ({
-            row: i + 1,
-            errors: row.errors,
-          }))
-        );
-        setImportErrorDialogOpen(true);
-        showSnackbar(responseData.message || "Some rows failed to import.", "error");
+      if (responseData?.message) {
+        // Show backend error (like "Duplicate data occurred!")
+        showSnackbar(responseData.message, "error");
       } else {
         showSnackbar(
-          "インポートに失敗しました: " + (responseData?.message || error.message),
+          "インポートに失敗しました: " + (error.message || "不明なエラー"),
           "error"
         );
       }
@@ -531,79 +559,82 @@ export default function StudentList() {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedStudents.map((student) => (
-                <TableRow key={student.id} hover>
-                  <TableCell>{student.id}</TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" fontWeight="bold">
-                      {student.roll_no}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{student.name}</TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={<School />}
-                      label={student.school?.name || "N/A"}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>{student.major}</TableCell>
-                  <TableCell>{student.year}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={`${student.iq_score}/100`}
-                      size="small"
-                      color={student.iq_score >= 60 ? "success" : "error"}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {student.employee ? (
-                      <Chip
-                        icon={<CheckCircle />}
-                        label="Yes"
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                      />
-                    ) : (
-                      <Chip
-                        icon={<Cancel />}
-                        label="No"
-                        size="small"
-                        color="default"
-                        variant="outlined"
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>{student.email}</TableCell>
-                  {canManageStudents() && (
+              paginatedStudents.map((student, idx) => {
+                const rowNumber = page * rowsPerPage + idx + 1;
+                return (
+                  <TableRow key={student.id} hover>
+                    <TableCell>{rowNumber}</TableCell>
                     <TableCell>
-                      <Box display="flex" gap={1}>
-                        <Tooltip title="学生の編集">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenDialog(student)}
-                            color="primary"
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="学生の削除">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteClick(student)}
-                            color="error"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {student.roll_no}
+                      </Typography>
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={<School />}
+                        label={student.school?.name || "N/A"}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>{student.major}</TableCell>
+                    <TableCell>{student.year}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={`${student.iq_score}/100`}
+                        size="small"
+                        color={student.iq_score >= 60 ? "success" : "error"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {student.employee ? (
+                        <Chip
+                          icon={<CheckCircle />}
+                          label="Yes"
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                        />
+                      ) : (
+                        <Chip
+                          icon={<Cancel />}
+                          label="No"
+                          size="small"
+                          color="default"
+                          variant="outlined"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    {canManageStudents() && (
+                      <TableCell>
+                        <Box display="flex" gap={1}>
+                          <Tooltip title="学生の編集">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenDialog(student)}
+                              color="primary"
+                            >
+                              <Edit />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="学生の削除">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteClick(student)}
+                              color="error"
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -624,49 +655,65 @@ export default function StudentList() {
       <Dialog
         open={importErrorDialogOpen}
         onClose={() => setImportErrorDialogOpen(false)}
-        maxWidth="lg"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle sx={{ textAlign: "center", color: "error.main" }}>
-          Import Validation Errors
+          インポート検証エラー
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            The file was processed, but some rows could not be imported due to the
-            following errors:
-          </DialogContentText>
           <TableContainer component={Paper}>
-            <Table size="small">
+            <Table size="small" sx={{ border: "1px solid #e0e0e0" }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Row</TableCell>
-                  <TableCell>Attribute</TableCell>
-                  <TableCell>Error(s)</TableCell>
-                  <TableCell>Value Provided</TableCell>
+                  <TableCell
+                    sx={{
+                      border: "1px solid #e0e0e0",
+                      fontWeight: "bold",
+                      backgroundColor: "#f5f5f5",
+                      textAlign: "center",
+                    }}
+                  >
+                    Row
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      border: "1px solid #e0e0e0",
+                      fontWeight: "bold",
+                      backgroundColor: "#f5f5f5",
+                    }}
+                  >
+                    Error(s)
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {importErrors.map((error, index) => (
                   <TableRow key={index}>
-                    <TableCell>{error.row || 'N/A'}</TableCell>
-                    <TableCell>{error.attribute || 'N/A'}</TableCell>
-                    <TableCell sx={{ color: 'error.main' }}>
-                      {error.errors?.join(", ")}
+                    <TableCell
+                      sx={{ border: "1px solid #e0e0e0", textAlign: "center" }}
+                    >
+                      {error.row || "N/A"}
                     </TableCell>
-                    <TableCell>
-                      <code>{JSON.stringify(error.values)}</code>
+                    <TableCell
+                      sx={{ border: "1px solid #e0e0e0", color: "error.main" }}
+                    >
+                      {error.errors?.join(", ")}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+          <DialogActions sx={{ mt: 2}}>
+            <Button
+              onClick={() => setImportErrorDialogOpen(false)}
+              variant="contained"
+            >
+              閉じる
+            </Button>
+          </DialogActions>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setImportErrorDialogOpen(false)} variant="contained">
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Edit Dialog */}
@@ -728,16 +775,75 @@ export default function StudentList() {
               error={!!formErrors.email}
               helperText={formErrors.email ? formErrors.email[0] : ""}
             />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="NRC番号"
-              value={formData.nrc_no}
-              onChange={(e) => handleInputChange("nrc_no", e.target.value)}
-              error={!!formErrors.nrc_no}
-              helperText={formErrors.nrc_no ? formErrors.nrc_no[0] : ""}
-              placeholder="e.g., 9/MaHaMa(N)456456"
-            />
+            <FormControl fullWidth margin="normal" error={!!formErrors.nrc_no}>
+              <Box sx={{ display: "flex", gap: 3 }}>
+                <FormControl className="w-[15%]">
+                  <InputLabel>Code</InputLabel>
+                  <Select
+                    name="nrcCode"
+                    value={nrc.nrcCode}
+                    onChange={handleNrcChange}
+                    label="Code"
+                  >
+                    {nrcCodes.map((code) => (
+                      <MenuItem key={code.id} value={code.name}>
+                        {code.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl className="w-[25%]">
+                  <InputLabel>Township</InputLabel>
+                  <Select
+                    name="nrcTownship"
+                    value={nrc.nrcTownship}
+                    onChange={handleNrcChange}
+                    label="Township"
+                  >
+                    {nrcTownships.map((township, index) => (
+                      <MenuItem
+                        key={`${township.code}-${index}`}
+                        value={township.code}
+                      >
+                        {township.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl className="w-[18%]">
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    name="nrcType"
+                    value={nrc.nrcType}
+                    onChange={handleNrcChange}
+                    label="Type"
+                  >
+                    {nrcTypes.map((type) => (
+                      <MenuItem key={type.id} value={type.id}>
+                        {type.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Number"
+                  name="nrcNumber"
+                  value={nrc.nrcNumber}
+                  onChange={handleNrcChange}
+                  inputProps={{ maxLength: 6 }}
+                />
+              </Box>
+              {formErrors.nrc_no && (
+                <Typography
+                  color="error"
+                  variant="caption"
+                  sx={{ pl: 2, pt: 1 }}
+                >
+                  {formErrors.nrc_no[0]}
+                </Typography>
+              )}
+            </FormControl>
             <TextField
               fullWidth
               margin="normal"

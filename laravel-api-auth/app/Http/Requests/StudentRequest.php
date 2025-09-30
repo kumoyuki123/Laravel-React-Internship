@@ -26,7 +26,7 @@ class StudentRequest extends FormRequest
             'roll_no' => ['required', 'string', 'max:50', 'unique:students,roll_no'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:students,email'],
-            'nrc_no' => ['required', 'string', 'max:100', 'unique:students,nrc_no'],
+            'nrc_no' => ['required', 'string', 'max:100', 'unique:students,nrc_no', 'regex:/^\d{1,2}\/[A-Za-z]+\([NPET]\)\d{6}$/'],
             'phone' => ['required', 'string', 'max:20'],
             'major' => ['required', 'string', 'max:100'],
             'year' => ['required', 'string', 'max:50'],
