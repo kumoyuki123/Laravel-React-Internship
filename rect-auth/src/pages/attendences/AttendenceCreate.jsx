@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   TextField,
@@ -10,24 +10,24 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress
-} from '@mui/material';
-import { attendanceApi, studentApi } from '../../services/ApiService';
-import { useNavigate } from 'react-router-dom';
+  CircularProgress,
+} from "@mui/material";
+import { attendanceApi, studentApi } from "../../services/ApiService";
+import { useNavigate } from "react-router-dom";
 
 export default function AttendanceCreate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [students, setStudents] = useState([]);
-  
+
   const [formData, setFormData] = useState({
-    student_id: '',
-    date: '',
-    status: 'present',
-    check_in_time: ''
+    student_id: "",
+    date: "",
+    status: "present",
+    check_in_time: "",
   });
 
   // Fetch students for dropdown
@@ -42,22 +42,22 @@ export default function AttendanceCreate() {
         setStudents(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[name]) {
-      setFieldErrors(prev => ({
+      setFieldErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -73,52 +73,57 @@ export default function AttendanceCreate() {
   // Format time to include seconds (HH:MM:SS)
   const formatTimeWithSeconds = (timeString) => {
     if (!timeString) return null;
-    
+
     // If already has seconds, return as is
-    if (timeString.includes(':') && timeString.split(':').length === 3) {
+    if (timeString.includes(":") && timeString.split(":").length === 3) {
       return timeString;
     }
-    
+
     // Add seconds (00) if only HH:MM format
-    return timeString + ':00';
+    return timeString + ":00";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setFieldErrors({});
     const formattedTime = formatTimeWithSeconds(formData.check_in_time);
-    const calculatedStatus = calculateStatus(formData.check_in_time, formData.date);
+    const calculatedStatus = calculateStatus(
+      formData.check_in_time,
+      formData.date
+    );
     const submitData = {
       student_id: formData.student_id,
       date: formData.date,
       status: calculatedStatus,
-      check_in_time: formattedTime
+      check_in_time: formattedTime,
     };
 
     try {
       const response = await attendanceApi.create(submitData);
       if (response.data.success) {
-        setSuccess('出席記録が作成されました！');
+        setSuccess("出席記録が作成されました！");
         setFormData({
-          student_id: '',
-          date: '',
-          status: 'present',
-          check_in_time: ''
+          student_id: "",
+          date: "",
+          status: "present",
+          check_in_time: "",
         });
         setTimeout(() => {
-          navigate('/dashboard/attendenceList');
+          navigate("/dashboard/attendenceList");
         }, 2000);
       }
     } catch (error) {
-      console.error('Attendance creation error:', error);
+      console.error("Attendance creation error:", error);
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
-        setError('フォームにエラーがあります。修正してください。');
+        setError("フォームにエラーがあります。修正してください。");
       } else {
-        setError(error.response?.data?.message || '出席記録の作成に失敗しました。');
+        setError(
+          error.response?.data?.message || "出席記録の作成に失敗しました。"
+        );
       }
     } finally {
       setLoading(false);
@@ -128,18 +133,34 @@ export default function AttendanceCreate() {
   return (
     <Box p={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4" component="h1">
           新しい出席記録作成
         </Typography>
-        <Button variant="outlined" onClick={() => navigate('/dashboard/attendenceList')}>
+        <Button
+          variant="outlined"
+          onClick={() => navigate("/dashboard/attendenceList")}
+        >
           戻る
         </Button>
       </Box>
 
       <Paper elevation={3} sx={{ p: 4 }}>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
 
         <Box component="form" onSubmit={handleSubmit}>
           <FormControl fullWidth margin="normal">
@@ -173,7 +194,7 @@ export default function AttendanceCreate() {
             onChange={handleChange}
             margin="normal"
             error={!!fieldErrors.date}
-            helperText={fieldErrors.date ? fieldErrors.date[0] : ''}
+            helperText={fieldErrors.date ? fieldErrors.date[0] : ""}
             InputLabelProps={{ shrink: true }}
           />
 
@@ -187,60 +208,74 @@ export default function AttendanceCreate() {
             margin="normal"
             error={!!fieldErrors.check_in_time}
             helperText={
-              fieldErrors.check_in_time ? fieldErrors.check_in_time[0] : 
-              'HH:MM形式で入力してください (例: 08:00, 08:30) - 秒は自動で追加されます'
+              fieldErrors.check_in_time
+                ? fieldErrors.check_in_time[0]
+                : "HH:MM形式で入力してください (例: 08:00, 08:30) - 秒は自動で追加されます"
             }
             InputLabelProps={{ shrink: true }}
           />
 
           {/* Status Preview */}
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: 'grey.50', 
-            borderRadius: 1, 
-            mt: 2,
-            border: '1px solid',
-            borderColor: 'grey.300'
-          }}>
+          <Box
+            sx={{
+              p: 2,
+              backgroundColor: "grey.50",
+              borderRadius: 1,
+              mt: 2,
+              border: "1px solid",
+              borderColor: "grey.300",
+            }}
+          >
             <Typography variant="body2" fontWeight="bold" gutterBottom>
               ステータス自動判定:
             </Typography>
-            <Typography 
-              variant="body1" 
+            <Typography
+              variant="body1"
               color={
-                calculateStatus(formData.check_in_time, formData.date) === 'present' ? 'success.main' :
-                calculateStatus(formData.check_in_time, formData.date) === 'late' ? 'warning.main' :
-                'error.main'
+                calculateStatus(formData.check_in_time, formData.date) ===
+                "present"
+                  ? "success.main"
+                  : calculateStatus(formData.check_in_time, formData.date) ===
+                    "late"
+                  ? "warning.main"
+                  : "error.main"
               }
               fontWeight="bold"
             >
-              {calculateStatus(formData.check_in_time, formData.date) === 'present' ? '出席' :
-               calculateStatus(formData.check_in_time, formData.date) === 'late' ? '遅刻' : '欠席'}
+              {calculateStatus(formData.check_in_time, formData.date) ===
+              "present"
+                ? "出席"
+                : calculateStatus(formData.check_in_time, formData.date) ===
+                  "late"
+                ? "遅刻"
+                : "欠席"}
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              {formData.check_in_time ? 
-                `チェックイン時間: ${formData.check_in_time}:00 (自動変換)` : 
-                'チェックイン時間が未入力のため欠席になります'}
+              {formData.check_in_time
+                ? `チェックイン時間: ${formData.check_in_time}:00 (自動変換)`
+                : "チェックイン時間が未入力のため欠席になります"}
             </Typography>
           </Box>
 
-          <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
+          <Box
+            sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "center" }}
+          >
             <Button
               variant="contained"
               sx={{ backgroundColor: "#606060", minWidth: 100 }}
-              onClick={() => navigate('/dashboard/attendenceList')}
+              onClick={() => navigate("/dashboard/attendenceList")}
               disabled={loading}
             >
               キャンセル
             </Button>
-            
+
             <Button
               type="submit"
               variant="contained"
               disabled={loading}
               sx={{ minWidth: 100 }}
             >
-              {loading ? <CircularProgress size={24} /> : '出席作成'}
+              {loading ? <CircularProgress size={24} /> : "出席作成"}
             </Button>
           </Box>
         </Box>

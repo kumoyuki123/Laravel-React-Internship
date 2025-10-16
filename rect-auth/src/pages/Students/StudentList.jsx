@@ -71,6 +71,7 @@ export default function StudentList() {
   const [formData, setFormData] = useState({
     school_id: "",
     roll_no: "",
+    branch: "",
     name: "",
     email: "",
     nrc_no: "",
@@ -164,6 +165,7 @@ export default function StudentList() {
     setFormData({
       school_id: student.school_id || "",
       roll_no: student.roll_no || "",
+      branch: student.branch || "",
       name: student.name || "",
       email: student.email || "",
       phone: student.phone || "",
@@ -182,6 +184,7 @@ export default function StudentList() {
     setFormData({
       school_id: "",
       roll_no: "",
+      branch: "",
       name: "",
       email: "",
       nrc_no: "",
@@ -383,14 +386,21 @@ export default function StudentList() {
     setStudentToDelete(null);
   };
 
-  // Filter students based on search term
+  // State for branch filter
+  const [branchFilter, setBranchFilter] = useState("all");
+
+  // Filter students based on search term and branch filter
   const filteredStudents = students.filter(
     (student) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.roll_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.major.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.school?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (searchTerm === "" ||
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.roll_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.major.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.school?.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) &&
+      (branchFilter === "all" || student.branch === branchFilter)
   );
 
   // Pagination
@@ -417,7 +427,7 @@ export default function StudentList() {
         minHeight="400px"
       >
         <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Loading students...</Typography>
+        <Typography sx={{ ml: 2 }}>インターンシップを読み込み中...</Typography>
       </Box>
     );
   }
@@ -454,23 +464,48 @@ export default function StudentList() {
         display="flex"
         gap={2}
         alignItems="center"
+        flexWrap="wrap"
         justifyContent="space-between"
       >
         {/* Search */}
-        <TextField
-          fullWidth
-          placeholder="検索 . . ."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flex: 1,
+            minWidth: 300,
+            maxWidth: 600,
           }}
-          sx={{ maxWidth: 400 }}
-        />
+        >
+          <TextField
+            fullWidth
+            placeholder="検索 . . ."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {/* Branch Filter */}
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel id="branch-filter-label">ブランチ</InputLabel>
+            <Select
+              labelId="branch-filter-label"
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              label="ブランチ"
+            >
+              <MenuItem value="all">All Branches</MenuItem>
+              <MenuItem value="mdy">Mandalay</MenuItem>
+              <MenuItem value="ygn">Yangon</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
         <Box>
           {/* Export Button */}
           <Button
@@ -517,6 +552,9 @@ export default function StudentList() {
                 <strong>ロール番号</strong>
               </TableCell>
               <TableCell>
+                <strong>Branch</strong>
+              </TableCell>
+              <TableCell>
                 <strong>名前</strong>
               </TableCell>
               <TableCell>
@@ -548,7 +586,7 @@ export default function StudentList() {
             {paginatedStudents.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={canManageStudents() ? 10 : 9}
+                  colSpan={canManageStudents() ? 11 : 10}
                   align="center"
                 >
                   <Typography color="textSecondary" py={4}>
@@ -568,6 +606,16 @@ export default function StudentList() {
                       <Typography variant="subtitle2" fontWeight="bold">
                         {student.roll_no}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={student.branch === "ygn" ? "Yangon" : "Mandalay"}
+                        size="small"
+                        color={
+                          student.branch === "ygn" ? "primary" : "secondary"
+                        }
+                        variant="outlined"
+                      />
                     </TableCell>
                     <TableCell>{student.name}</TableCell>
                     <TableCell>
@@ -705,7 +753,7 @@ export default function StudentList() {
               </TableBody>
             </Table>
           </TableContainer>
-          <DialogActions sx={{ mt: 2}}>
+          <DialogActions sx={{ mt: 2 }}>
             <Button
               onClick={() => setImportErrorDialogOpen(false)}
               variant="contained"
@@ -756,6 +804,23 @@ export default function StudentList() {
               error={!!formErrors.roll_no}
               helperText={formErrors.roll_no ? formErrors.roll_no[0] : ""}
             />
+            <FormControl fullWidth margin="normal" error={!!formErrors.branch}>
+              <InputLabel id="edit-branch-label">Branch</InputLabel>
+              <Select
+                labelId="edit-branch-label"
+                label="Branch"
+                value={formData.branch || "mdy"}
+                onChange={(e) => handleInputChange("branch", e.target.value)}
+              >
+                <MenuItem value="mdy">Mandalay</MenuItem>
+                <MenuItem value="ygn">Yangon</MenuItem>
+              </Select>
+              {formErrors.branch && (
+                <Typography color="error" variant="caption">
+                  {formErrors.branch[0]}
+                </Typography>
+              )}
+            </FormControl>
             <TextField
               fullWidth
               margin="normal"

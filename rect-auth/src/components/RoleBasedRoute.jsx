@@ -1,8 +1,12 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Box, Typography, Paper } from '@mui/material';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Box, Typography, Paper } from "@mui/material";
 
-const RoleBasedRoute = ({ children, allowedRoles = [], requirePermission = null }) => {
+const RoleBasedRoute = ({
+  children,
+  allowedRoles = [],
+  requirePermission = null,
+}) => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
@@ -12,14 +16,14 @@ const RoleBasedRoute = ({ children, allowedRoles = [], requirePermission = null 
   // Check role-based access
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
         minHeight="60vh"
         p={3}
       >
-        <Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: "center", maxWidth: 400 }}>
           <Typography variant="h5" color="error" gutterBottom>
             Access Denied
           </Typography>
@@ -27,7 +31,7 @@ const RoleBasedRoute = ({ children, allowedRoles = [], requirePermission = null 
             You don't have permission to access this page.
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Required roles: {allowedRoles.join(', ')}
+            Required roles: {allowedRoles.join(", ")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Your role: {user?.role}
@@ -40,14 +44,14 @@ const RoleBasedRoute = ({ children, allowedRoles = [], requirePermission = null 
   // Check permission-based access
   if (requirePermission && !requirePermission()) {
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
         minHeight="60vh"
         p={3}
       >
-        <Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: "center", maxWidth: 400 }}>
           <Typography variant="h5" color="error" gutterBottom>
             Access Denied
           </Typography>

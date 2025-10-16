@@ -33,7 +33,7 @@ class AttendanceRequest extends FormRequest
             'student_id' => ['required', 'exists:students,id'],
             'date' => ['required', 'date'],
             'status' => ['required', 'in:present,absent,late'],
-            'check_in_time' => ['nullable', 'date_format:H:i'], // Accept both H:i and H:i:s
+            'check_in_time' => ['nullable', 'date_format:H:i'],
         ];
     }
 

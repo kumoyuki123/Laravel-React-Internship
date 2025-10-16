@@ -1,23 +1,27 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AttendenceController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\StudentController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\AttendenceController;
+use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-// Public routes
+// Auth route
 Route::post('login', [AuthController::class, 'login']);
 
-// Protected routes (require authentication)
+// Password reset routes
+Route::post('forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::post('reset-password', [PasswordResetController::class, 'reset']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
+
     // Profile routes
     Route::get('profile', [AuthController::class, 'show']);
     Route::put('profile', [AuthController::class, 'update']);
@@ -31,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('users/{id}', [UserController::class, 'destroy']);
     });
 
-    // School routes (accessible by all authenticated users)
+    // School routes
     Route::get('schools', [SchoolController::class, 'index']);
     Route::get('schools/{id}', [SchoolController::class, 'show']);
     Route::middleware('role:superuser,hr_admin,supervisor')->group(function () {
@@ -69,7 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('attendances/{id}', [AttendenceController::class, 'update']);
         Route::delete('attendances/{id}', [AttendenceController::class, 'destroy']);
     });
-    
+
     // Logout
     Route::post('logout', [AuthController::class, 'logout']);
 });

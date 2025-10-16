@@ -1,74 +1,55 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StudentRequest;
-use App\Models\Student;
-use App\Models\School;
-use App\Models\Employee;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\StudentsExport;
+use App\Http\Requests\StudentRequest;
 use App\Imports\StudentsImport;
+use App\Models\Employee;
+use App\Models\Student;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
-    /**
-     * Get all students
-     */
     public function index()
     {
-        $students = Student::with(['school', 'employee', 'attendances'])
-                          ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $students
-        ]);
+        $students = Student::with(['school', 'employee', 'attendances'])->get();
+        return response()->json(['success' => true, 'data' => $students]);
     }
 
-    /**
-     * Create a new student
-     */
     public function store(StudentRequest $request)
     {
-        \Log::info($request);
         DB::beginTransaction();
-        
+
         try {
-            // Create student
             $student = Student::create($request->validated());
 
-            // Auto-create employee if IQ score >= 60
             if ($student->iq_score >= 60) {
                 Employee::create([
-                    'student_id' => $student->id,
-                    'school_id' => $student->school_id,
-                    'iq_score' => $student->iq_score,
-                    'jp_level' => null,
-                    'skill_language' => null
+                    'student_id'     => $student->id,
+                    'school_id'      => $student->school_id,
+                    'iq_score'       => $student->iq_score,
+                    'jp_level'       => null,
+                    'skill_language' => null,
                 ]);
             }
-
             DB::commit();
-
-            // Load relationships for response
             $student->load(['school', 'employee']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Student created successfully' . ($student->iq_score >= 60 ? ' and automatically added as employee' : ''),
-                'data' => $student
+                'data'    => $student,
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create student: ' . $e->getMessage()
+                'message' => 'Failed to create student: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -80,16 +61,16 @@ class StudentController extends Controller
     {
         $student = Student::with(['school', 'employee', 'attendances'])->find($id);
 
-        if (!$student) {
+        if (! $student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student not found'
+                'message' => 'Student not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $student
+            'data'    => $student,
         ]);
     }
 
@@ -100,56 +81,47 @@ class StudentController extends Controller
     {
         $student = Student::find($id);
 
-        if (!$student) {
+        if (! $student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student not found'
+                'message' => 'Student not found',
             ], 404);
         }
 
         DB::beginTransaction();
-        
+
         try {
             $oldIqScore = $student->iq_score;
             $newIqScore = $request->iq_score;
-            
-            // Update student
             $student->update($request->validated());
-
-            // Handle employee creation/deletion based on IQ score change
             if ($oldIqScore < 60 && $newIqScore >= 60) {
-                // Create employee if IQ score improved to pass level
                 Employee::create([
-                    'student_id' => $student->id,
-                    'school_id' => $student->school_id,
-                    'iq_score' => $student->iq_score,
-                    'jp_level' => null,
-                    'skill_language' => null
+                    'student_id'     => $student->id,
+                    'school_id'      => $student->school_id,
+                    'iq_score'       => $student->iq_score,
+                    'jp_level'       => null,
+                    'skill_language' => null,
                 ]);
             } elseif ($oldIqScore >= 60 && $newIqScore < 60) {
-                // Remove employee if IQ score dropped below pass level
                 Employee::where('student_id', $student->id)->delete();
             } elseif ($newIqScore >= 60 && $student->employee) {
-                // Update existing employee's IQ score
                 $student->employee->update(['iq_score' => $newIqScore]);
             }
 
             DB::commit();
-
-            // Load relationships for response
             $student->load(['school', 'employee']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Student updated successfully',
-                'data' => $student
+                'data'    => $student,
             ]);
 
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update student: ' . $e->getMessage()
+                'message' => 'Failed to update student: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -161,36 +133,33 @@ class StudentController extends Controller
     {
         $student = Student::find($id);
 
-        if (!$student) {
+        if (! $student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student not found'
+                'message' => 'Student not found',
             ], 404);
         }
 
         DB::beginTransaction();
-        
+
         try {
-            // Delete related employee if exists
             if ($student->employee) {
                 $student->employee->delete();
             }
-
-            // Delete student (attendances will be deleted by cascade if set up)
             $student->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Student deleted successfully'
+                'message' => 'Student deleted successfully',
             ]);
 
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete student: ' . $e->getMessage()
+                'message' => 'Failed to delete student: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -202,12 +171,12 @@ class StudentController extends Controller
     {
         try {
             $filename = 'students_' . now()->format('Y-m-d') . '.xlsx';
-            
+
             return Excel::download(new StudentsExport, $filename);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Export failed: ' . $e->getMessage()
+                'message' => 'Export failed: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -218,13 +187,13 @@ class StudentController extends Controller
     public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ]);
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors'  => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
         DB::beginTransaction();
@@ -234,8 +203,8 @@ class StudentController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Students imported successfully',
+                'success'      => true,
+                'message'      => 'Students imported successfully',
                 'skipped_rows' => $import->getSkippedRows(),
             ], 200);
 

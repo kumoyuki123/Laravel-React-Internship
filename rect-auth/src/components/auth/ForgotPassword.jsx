@@ -1,36 +1,36 @@
 import { useState } from "react";
-import Footer from "../components/Footer";
+import Footer from "../Footer";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const { login } = useAuth();
-
+  const { forgotPassword } = useAuth();
   const handleGoToMain = () => {
     navigate("/");
   };
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
     setError("");
     setErrors({});
     setIsLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await forgotPassword({ email });
       if (result.success) {
-        navigate("/dashboard");
+        setMessage(result.message);
       } else {
         setError(result.error);
         setErrors(result.fieldErrors || {});
       }
     } catch (error) {
-      setError("ログイン中に予期せぬエラーが発生しました");
+      setError("send mail chuu");
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
@@ -45,10 +45,10 @@ export default function Login() {
         </h1>
         <form
           className="bg-white space-y-4 p-6 rounded-2xl shadow-md w-full max-w-md mb-0 relative"
-          onSubmit={submit}
+          onSubmit={handleSubmit}
         >
           <h2 className="text-3xl font-bold text-center text-green-900 mb-4 font-sans">
-            ログイン
+            忘れパスワード
           </h2>
           <button
             onClick={handleGoToMain}
@@ -63,7 +63,7 @@ export default function Login() {
           {/* Email Field */}
           <div>
             <label className="block text-md font-medium text-green-700 mb-2 font-sans">
-              ログインID (メールアドレス)
+              メールアドレス
               <span className="ml-2 text-[10px] text-red-500 bg-red-100 px-1 py-1 rounded">
                 必須
               </span>
@@ -84,57 +84,26 @@ export default function Login() {
             )}
           </div>
 
-          {/* Password Field */}
-          <div>
-            <label className="block text-md font-medium text-green-700 mb-2 font-sans">
-              パスワード
-              <span className="ml-2 text-[10px] text-red-500 bg-red-100 px-1 py-1 rounded">
-                必須
-              </span>
-            </label>
-            <input
-              type="password"
-              name="password"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-sans"
-              placeholder="パスワードを入力してください"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-            {errors.password && (
-              <div className="text-red-500 text-xs mt-1 font-sans font-bold">
-                {errors.password[0]}
-              </div>
-            )}
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
-            className={` login-button w-40 m-auto block py-3 px-4 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 font-sans ${
+            className={` login-button reset-button m-auto block py-3 px-4 text-white font-sm rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 font-sans ${
               isLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isLoading ? "ログイン中..." : "ログイン"}
+            {isLoading
+              ? "パスワードリセットリンクを送信中..."
+              : "パスワードリセットリンクを送信"}
           </button>
-
+          {message && (
+            <p style={{ color: "green", marginTop: 15 }}>{message}</p>
+          )}
           {/* General Error Message */}
           {error && typeof error === "string" && (
             <div className="text-red-500 text-sm text-center mt-2 font-sans font-bold">
               {error}
             </div>
           )}
-
-          {/* Forgot Password Button */}
-          <div className="text-center mt-2">
-            <button
-              type="button"
-              onClick={() => navigate("/forgot-password")}
-              className="text-sm text-green-600 hover:underline"
-            >
-              パスワードを忘れましたか？
-            </button>
-          </div>
         </form>
       </div>
       <Footer></Footer>

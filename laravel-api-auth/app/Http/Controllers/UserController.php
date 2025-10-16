@@ -1,12 +1,10 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -16,11 +14,11 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::select('id', 'name', 'email', 'role', 'created_at')
-                    ->get();
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $users
+            'data'    => $users,
         ]);
     }
 
@@ -40,12 +38,12 @@ class UserController extends Controller
             'success' => true,
             'message' => 'User created successfully',
             'data'    => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'created_at' => $user->created_at
-            ]
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'role'       => $user->role,
+                'created_at' => $user->created_at,
+            ],
         ], 201);
     }
 
@@ -56,17 +54,17 @@ class UserController extends Controller
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 404);
         }
 
         if ($user->isSuperuser()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot update superuser'
+                'message' => 'Cannot update superuser',
             ], 403);
         }
 
@@ -75,7 +73,7 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User updated successfully',
-            'data'    => $user
+            'data'    => $user,
         ]);
     }
 
@@ -85,11 +83,11 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = User::find($id);
-        
-        if (!$user) {
+
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 404);
         }
 
@@ -97,7 +95,7 @@ class UserController extends Controller
         if ($user->isSuperuser()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete superuser'
+                'message' => 'Cannot delete superuser',
             ], 403);
         }
 
@@ -105,7 +103,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully'
+            'message' => 'User deleted successfully',
         ]);
     }
 }

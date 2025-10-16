@@ -13,14 +13,12 @@ class SchoolSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create MIIT school as mentioned in requirements
         School::create([
             'name' => 'MIIT',
             'teacher_name' => 'Daw YiYi',
             'teacher_email' => 'yiyi@gmail.com',
         ]);
 
-        // Create additional test schools
         School::create([
             'name' => 'University of Computer Studies',
             'teacher_name' => 'Dr. Thant Zin',

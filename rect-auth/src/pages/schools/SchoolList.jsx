@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -22,8 +22,8 @@ import {
   Chip,
   TablePagination,
   InputAdornment,
-  Tooltip
-} from '@mui/material';
+  Tooltip,
+} from "@mui/material";
 import {
   Add,
   Edit,
@@ -31,17 +31,17 @@ import {
   Search,
   School,
   Person,
-  Work
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
-import { schoolApi } from '../../services/ApiService';
-import { useNavigate } from 'react-router-dom';
+  Work,
+} from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
+import { schoolApi } from "../../services/ApiService";
+import { useNavigate } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
 
 export default function SchoolList() {
   const { canManageSchools } = useAuth();
   const navigate = useNavigate();
-  
+
   // State management
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,23 +49,23 @@ export default function SchoolList() {
   const [editingSchool, setEditingSchool] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [schoolToDelete, setSchoolToDelete] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    teacher_name: '',
-    teacher_email: ''
+    name: "",
+    teacher_name: "",
+    teacher_email: "",
   });
   const [formErrors, setFormErrors] = useState({});
-  
+
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success'
+    message: "",
+    severity: "success",
   });
 
   // Fetch schools on component mount
@@ -81,14 +81,14 @@ export default function SchoolList() {
         setSchools(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching schools:', error);
-      showSnackbar('Failed to fetch schools', 'error');
+      console.error("Error fetching schools:", error);
+      showSnackbar("Failed to fetch schools", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
@@ -102,7 +102,7 @@ export default function SchoolList() {
     setFormData({
       name: school.name,
       teacher_name: school.teacher_name,
-      teacher_email: school.teacher_email
+      teacher_email: school.teacher_email,
     });
     setFormErrors({});
     setOpenDialog(true);
@@ -111,7 +111,7 @@ export default function SchoolList() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingSchool(null);
-    setFormData({ name: '', teacher_name: '', teacher_email: '' });
+    setFormData({ name: "", teacher_name: "", teacher_email: "" });
     setFormErrors({});
   };
 
@@ -119,7 +119,7 @@ export default function SchoolList() {
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
     if (formErrors[field]) {
-      setFormErrors({ ...formErrors, [field]: '' });
+      setFormErrors({ ...formErrors, [field]: "" });
     }
   };
 
@@ -128,19 +128,20 @@ export default function SchoolList() {
 
     try {
       await schoolApi.update(editingSchool.id, formData);
-      showSnackbar('大学が正常に更新されました。');
+      showSnackbar("大学が正常に更新されました。");
       fetchSchools();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving school:', error);
-      
+      console.error("Error saving school:", error);
+
       // Handle Laravel validation errors
       if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
-        showSnackbar('フォームのエラーを修正してください。', 'error');
+        showSnackbar("フォームのエラーを修正してください。", "error");
       } else {
-        const errorMessage = error.response?.data?.message || 'Failed to save school';
-        showSnackbar(errorMessage, 'error');
+        const errorMessage =
+          error.response?.data?.message || "Failed to save school";
+        showSnackbar(errorMessage, "error");
       }
     }
   };
@@ -154,12 +155,13 @@ export default function SchoolList() {
   const handleDeleteConfirm = async () => {
     try {
       await schoolApi.delete(schoolToDelete.id);
-      showSnackbar('大学は正常に削除されました。');
+      showSnackbar("大学は正常に削除されました。");
       fetchSchools();
     } catch (error) {
-      console.error('Error deleting school:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete school';
-      showSnackbar(errorMessage, 'error');
+      console.error("Error deleting school:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete school";
+      showSnackbar(errorMessage, "error");
     } finally {
       setDeleteConfirmOpen(false);
       setSchoolToDelete(null);
@@ -172,10 +174,11 @@ export default function SchoolList() {
   };
 
   // Filter schools based on search term
-  const filteredSchools = schools.filter(school =>
-    school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    school.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    school.teacher_email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSchools = schools.filter(
+    (school) =>
+      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.teacher_email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination
@@ -195,8 +198,13 @@ export default function SchoolList() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography>Loading schools...</Typography>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <Typography>大学を読み込み中...</Typography>
       </Box>
     );
   }
@@ -392,7 +400,7 @@ export default function SchoolList() {
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               error={!!formErrors.name}
-              helperText={formErrors.name ? formErrors.name[0] : ''}
+              helperText={formErrors.name ? formErrors.name[0] : ""}
             />
             <TextField
               fullWidth
@@ -402,7 +410,9 @@ export default function SchoolList() {
                 handleInputChange("teacher_name", e.target.value)
               }
               error={!!formErrors.teacher_name}
-              helperText={formErrors.teacher_name ? formErrors.teacher_name[0] : ''}
+              helperText={
+                formErrors.teacher_name ? formErrors.teacher_name[0] : ""
+              }
             />
             <TextField
               fullWidth
@@ -413,7 +423,9 @@ export default function SchoolList() {
                 handleInputChange("teacher_email", e.target.value)
               }
               error={!!formErrors.teacher_email}
-              helperText={formErrors.teacher_email ? formErrors.teacher_email[0] : ''}
+              helperText={
+                formErrors.teacher_email ? formErrors.teacher_email[0] : ""
+              }
             />
           </Box>
         </DialogContent>

@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\AttendanceRequest;
 use App\Models\Attendence;
-use Illuminate\Support\Facades\Validator;
 
 class AttendenceController extends Controller
 {
@@ -15,11 +12,11 @@ class AttendenceController extends Controller
     public function index()
     {
         $attendances = Attendence::with(['student', 'student.school'])
-                                ->get();
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $attendances
+            'data'    => $attendances,
         ]);
     }
 
@@ -28,27 +25,23 @@ class AttendenceController extends Controller
      */
     public function store(AttendanceRequest $request)
     {
-        // Check if attendance already exists for this student on this date
         $existingAttendance = Attendence::where('student_id', $request->student_id)
-                                      ->where('date', $request->date)
-                                      ->first();
+            ->where('date', $request->date)
+            ->first();
 
         if ($existingAttendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Attendance record already exists for this student on this date'
+                'message' => 'Attendance record already exists for this student on this date',
             ], 422);
         }
-
         $attendance = Attendence::create($request->validated());
-
-        // Load relationships for response
         $attendance->load(['student', 'student.school']);
 
         return response()->json([
             'success' => true,
             'message' => 'Attendance record created successfully',
-            'data' => $attendance
+            'data'    => $attendance,
         ], 201);
     }
 
@@ -59,16 +52,16 @@ class AttendenceController extends Controller
     {
         $attendance = Attendence::with(['student', 'student.school'])->find($id);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Attendance record not found'
+                'message' => 'Attendance record not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $attendance
+            'data'    => $attendance,
         ]);
     }
 
@@ -79,22 +72,19 @@ class AttendenceController extends Controller
     {
         $attendance = Attendence::find($id);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Attendance record not found'
+                'message' => 'Attendance record not found',
             ], 404);
         }
-
         $attendance->update($request->validated());
-
-        // Load relationships for response
         $attendance->load(['student', 'student.school']);
 
         return response()->json([
             'success' => true,
             'message' => 'Attendance record updated successfully',
-            'data' => $attendance
+            'data'    => $attendance,
         ]);
     }
 
@@ -105,10 +95,10 @@ class AttendenceController extends Controller
     {
         $attendance = Attendence::find($id);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Attendance record not found'
+                'message' => 'Attendance record not found',
             ], 404);
         }
 
@@ -116,7 +106,7 @@ class AttendenceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Attendance record deleted successfully'
+            'message' => 'Attendance record deleted successfully',
         ]);
     }
 
@@ -126,13 +116,13 @@ class AttendenceController extends Controller
     public function getByStudent($studentId)
     {
         $attendances = Attendence::with(['student', 'student.school'])
-                                ->where('student_id', $studentId)
-                                ->orderBy('date', 'desc')
-                                ->get();
+            ->where('student_id', $studentId)
+            ->orderBy('date', 'desc')
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $attendances
+            'data'    => $attendances,
         ]);
     }
 
@@ -142,7 +132,7 @@ class AttendenceController extends Controller
     public function getByDateRange(AttendanceRequest $request)
     {
         $query = Attendence::with(['student', 'student.school'])
-                          ->whereBetween('date', [$request->start_date, $request->end_date]);
+            ->whereBetween('date', [$request->start_date, $request->end_date]);
 
         if ($request->student_id) {
             $query->where('student_id', $request->student_id);
@@ -152,7 +142,7 @@ class AttendenceController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $attendances
+            'data'    => $attendances,
         ]);
     }
 }

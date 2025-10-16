@@ -27,7 +27,15 @@ import {
   InputLabel,
   Select,
 } from "@mui/material";
-import { Add, Edit, Delete, Search, CheckCircle, Cancel, Schedule } from "@mui/icons-material";
+import {
+  Add,
+  Edit,
+  Delete,
+  Search,
+  CheckCircle,
+  Cancel,
+  Schedule,
+} from "@mui/icons-material";
 import ErrorIcon from "@mui/icons-material/Error";
 import { useAuth } from "../../contexts/AuthContext";
 import { attendanceApi, studentApi } from "../../services/ApiService";
@@ -141,36 +149,40 @@ export default function AttendenceList() {
     }
   };
   const calculateStatus = (checkInTime, date) => {
-  if (!checkInTime) return 'absent';
-  const [hours, minutes] = checkInTime.split(':').map(Number);
-  const totalMinutes = hours * 60 + minutes;
-  const lateThreshold = 8 * 60;
-  return totalMinutes > lateThreshold ? 'late' : 'present';
-};
-const handleSubmit = async () => {
-  setFormErrors({});
-  const calculatedStatus = calculateStatus(formData.check_in_time, formData.date);
-  const submitData = {
-    ...formData,
-    status: calculatedStatus
+    if (!checkInTime) return "absent";
+    const [hours, minutes] = checkInTime.split(":").map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    const lateThreshold = 8 * 60;
+    return totalMinutes > lateThreshold ? "late" : "present";
   };
+  const handleSubmit = async () => {
+    setFormErrors({});
+    const calculatedStatus = calculateStatus(
+      formData.check_in_time,
+      formData.date
+    );
+    const submitData = {
+      ...formData,
+      status: calculatedStatus,
+    };
 
-  try {
-    await attendanceApi.update(editingAttendance.id, submitData);
-    showSnackbar("Attendance updated successfully");
-    fetchAttendances();
-    handleCloseDialog();
-  } catch (error) {
-    console.error("Error saving attendance:", error);
-    if (error.response?.data?.errors) {
-      setFormErrors(error.response.data.errors);
-      showSnackbar('Please fix the form errors', 'error');
-    } else {
-      const errorMessage = error.response?.data?.message || "Failed to save attendance";
-      showSnackbar(errorMessage, "error");
+    try {
+      await attendanceApi.update(editingAttendance.id, submitData);
+      showSnackbar("Attendance updated successfully");
+      fetchAttendances();
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      if (error.response?.data?.errors) {
+        setFormErrors(error.response.data.errors);
+        showSnackbar("Please fix the form errors", "error");
+      } else {
+        const errorMessage =
+          error.response?.data?.message || "Failed to save attendance";
+        showSnackbar(errorMessage, "error");
+      }
     }
-  }
-};
+  };
 
   // Delete
   const handleDeleteClick = (attendance) => {
@@ -185,7 +197,8 @@ const handleSubmit = async () => {
       fetchAttendances();
     } catch (error) {
       console.error("Error deleting attendance:", error);
-      const errorMessage = error.response?.data?.message || "Failed to delete attendance";
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete attendance";
       showSnackbar(errorMessage, "error");
     } finally {
       setDeleteConfirmOpen(false);
@@ -264,8 +277,13 @@ const handleSubmit = async () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography>Loading attendances...</Typography>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <Typography>出席情報を読み込み中...</Typography>
       </Box>
     );
   }
@@ -298,7 +316,12 @@ const handleSubmit = async () => {
       </Box>
 
       {/* Search and Filter */}
-      <Box display="flex" gap={2} mb={3} sx={{justifyContent: 'space-between'}}>
+      <Box
+        display="flex"
+        gap={2}
+        mb={3}
+        sx={{ justifyContent: "space-between" }}
+      >
         <TextField
           placeholder="検索 . . ."
           value={searchTerm}
@@ -339,6 +362,15 @@ const handleSubmit = async () => {
                 <strong>学生名</strong>
               </TableCell>
               <TableCell>
+                <strong>大学名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>先生名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>先生メールアドレス</strong>
+              </TableCell>
+              <TableCell>
                 <strong>日付</strong>
               </TableCell>
               <TableCell>
@@ -374,6 +406,15 @@ const handleSubmit = async () => {
                   <TableCell>{attendance.id}</TableCell>
                   <TableCell>{attendance.student?.name || "N/A"}</TableCell>
                   <TableCell>
+                    {attendance.student?.school?.name || "N/A"}
+                  </TableCell>
+                  <TableCell>
+                    {attendance.student?.school?.teacher_name || "N/A"}
+                  </TableCell>
+                  <TableCell>
+                    {attendance.student?.school?.teacher_email || "N/A"}
+                  </TableCell>
+                  <TableCell>
                     {new Date(attendance.date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -385,7 +426,9 @@ const handleSubmit = async () => {
                       variant="filled"
                     />
                   </TableCell>
-                  <TableCell>{attendance.check_in_time || "N/A"}</TableCell>
+                  <TableCell>
+                    {attendance.check_in_time || "00:00:00"}
+                  </TableCell>
                   {canManageAttendance() && (
                     <TableCell>
                       <Box display="flex" gap={1}>
@@ -445,7 +488,9 @@ const handleSubmit = async () => {
               <InputLabel>学生</InputLabel>
               <Select
                 value={formData.student_id}
-                onChange={(e) => handleInputChange("student_id", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("student_id", e.target.value)
+                }
                 label="学生"
                 error={!!formErrors.student_id}
               >
@@ -456,7 +501,11 @@ const handleSubmit = async () => {
                 ))}
               </Select>
               {formErrors.student_id && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ mt: 0.5, ml: 1.5 }}
+                >
                   {formErrors.student_id[0]}
                 </Typography>
               )}
@@ -469,7 +518,7 @@ const handleSubmit = async () => {
               value={formData.date}
               onChange={(e) => handleInputChange("date", e.target.value)}
               error={!!formErrors.date}
-              helperText={formErrors.date ? formErrors.date[0] : ''}
+              helperText={formErrors.date ? formErrors.date[0] : ""}
               InputLabelProps={{ shrink: true }}
             />
 
@@ -478,19 +527,32 @@ const handleSubmit = async () => {
               label="チェックイン時間"
               type="time"
               value={formData.check_in_time}
-              onChange={(e) => handleInputChange("check_in_time", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("check_in_time", e.target.value)
+              }
               error={!!formErrors.check_in_time}
-              helperText={formErrors.check_in_time ? formErrors.check_in_time[0] : '8:00以前: 出席, 8:00以降: 遅刻, 未入力: 欠席'}
+              helperText={
+                formErrors.check_in_time
+                  ? formErrors.check_in_time[0]
+                  : "8:00以前: 出席, 8:00以降: 遅刻, 未入力: 欠席"
+              }
               InputLabelProps={{ shrink: true }}
             />
 
             {/* Display auto-calculated status */}
-            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
               <Typography variant="body2" fontWeight="bold">
                 自動判定ステータス:
               </Typography>
-              <Typography variant="body2" color={getStatusColor(calculateStatus(formData.check_in_time, formData.date))}>
-                {getStatusLabel(calculateStatus(formData.check_in_time, formData.date))}
+              <Typography
+                variant="body2"
+                color={getStatusColor(
+                  calculateStatus(formData.check_in_time, formData.date)
+                )}
+              >
+                {getStatusLabel(
+                  calculateStatus(formData.check_in_time, formData.date)
+                )}
               </Typography>
             </Box>
           </Box>

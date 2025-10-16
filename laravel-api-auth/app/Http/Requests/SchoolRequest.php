@@ -27,7 +27,6 @@ class SchoolRequest extends FormRequest
             'teacher_email' => ['required', 'email', 'unique:schools,teacher_email'],
         ];
 
-        // If update, exclude current school from unique rule
         if ($this->isMethod('put') || $this->isMethod('patch')) {
             $schoolId = $this->route('id');
             $rules['teacher_email'][2] = 'unique:schools,teacher_email,' . $schoolId;

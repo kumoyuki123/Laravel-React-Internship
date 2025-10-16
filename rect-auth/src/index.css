@@ -63,7 +63,7 @@
 
 /* Apply Noto Serif JP globally */
 * {
-    font-family: 'Noto Serif JP', serif;
+  font-family: 'Noto Serif JP', serif;
 }
 
 body {
@@ -71,7 +71,10 @@ body {
 }
 
 /* Ensure form elements inherit the font */
-input, button, textarea, select {
+input,
+button,
+textarea,
+select {
   font-family: inherit;
 }
 
@@ -89,4 +92,8 @@ input, button, textarea, select {
 
 .login-button:hover {
   background-color: rgba(92, 155, 16, 0.9) !important;
+}
+
+.reset-button {
+  width: 75%;
 }

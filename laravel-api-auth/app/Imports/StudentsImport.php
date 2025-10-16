@@ -28,11 +28,10 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
     {
         $this->prepareSchools($rows);
         foreach ($rows as $index => $row) {
-            $rowNumber = $index + 1; // +1 for header, +1 for 0-based index
+            $rowNumber = $index + 1;
             try {
                 $this->processRow($row, $rowNumber);
             } catch (\Exception $e) {
-                // Catch any validation errors we throw manually
                 $this->skippedRows[] = [
                     'row'    => $rowNumber,
                     'errors' => [$e->getMessage()],
@@ -80,12 +79,9 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
         }
     }
 
-    /**
-     * --- UPDATED LOGIC WITH PROPER VALIDATION ---
-     */
     private function processRow($row, $rowNumber)
     {
-        $requiredFields = ['school', 'roll_no', 'name', 'email', 'nrc_no', 'phone', 'major', 'year', 'iq_score'];
+        $requiredFields = ['school', 'roll_no', 'branch', 'name', 'email', 'nrc_no', 'phone', 'major', 'year', 'iq_score'];
         foreach ($requiredFields as $field) {
             if (empty($row[$field])) {
                 throw new \Exception("Field '{$field}' is required and cannot be empty.");
@@ -98,6 +94,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
         $studentData = [
             'school_id' => $schoolId,
             'roll_no'   => trim((string) $row['roll_no']),
+            'branch'   => trim((string) $row['branch']),
             'name'      => trim((string) $row['name']),
             'nrc_no'    => trim((string) $row['nrc_no']),
             'email'     => trim((string) $row['email']),
@@ -138,7 +135,6 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
 
         // Case 5: Same roll number in same school and year (for new student or different student)
         if ($existingByRollNo) {
-            // If this is a different student trying to use same roll number
             if ((! $existingByNrc || $existingByNrc->id !== $existingByRollNo->id) &&
                 (! $existingByEmail || $existingByEmail->id !== $existingByRollNo->id)) {
                 throw new \Exception("Roll Number '{$studentData['roll_no']}' already exists for school '{$row['school']}' in year '{$studentData['year']}'.");
@@ -166,6 +162,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
     {
         return $existingStudent->school_id == $newData['school_id'] &&
         $existingStudent->roll_no == $newData['roll_no'] &&
+        $existingStudent->branch == $newData['branch'] &&
         $existingStudent->name == $newData['name'] &&
         $existingStudent->email == $newData['email'] &&
         $existingStudent->nrc_no == $newData['nrc_no'] &&
@@ -205,6 +202,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, WithValidation, Sk
         return [
             '*.school'   => ['required', 'string', 'max:255'],
             '*.roll_no'  => ['required', 'string', 'max:50'],
+            '*.branch'  => ['required', 'string', 'max:50'],
             '*.name'     => ['required', 'string', 'max:255'],
             '*.nrc_no'   => ['required', 'string', 'max:100'],
             '*.email'    => ['required', 'email', 'max:255'],

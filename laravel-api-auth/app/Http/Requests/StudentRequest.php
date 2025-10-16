@@ -24,6 +24,7 @@ class StudentRequest extends FormRequest
         $rules = [
             'school_id' => ['required', 'exists:schools,id'],
             'roll_no' => ['required', 'string', 'max:50', 'unique:students,roll_no'],
+            'branch' => ['required', 'in:mdy,ygn'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:students,email'],
             'nrc_no' => ['required', 'string', 'max:100', 'unique:students,nrc_no', 'regex:/^\d{1,2}\/[A-Za-z]+\([NPET]\)\d{6}$/'],
@@ -33,7 +34,6 @@ class StudentRequest extends FormRequest
             'iq_score' => ['required', 'integer', 'min:0', 'max:100'],
         ];
 
-        // If update, exclude current student from unique rules
         if ($this->isMethod('put') || $this->isMethod('patch')) {
             $studentId = $this->route('id');
             $rules['roll_no'][3] = 'unique:students,roll_no,' . $studentId;

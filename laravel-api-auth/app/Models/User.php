@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -14,10 +13,10 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens;
 
     // Role constants
-    const ROLE_SUPERUSER = 'superuser';
-    const ROLE_HR_ADMIN = 'hr_admin';
+    const ROLE_SUPERUSER  = 'superuser';
+    const ROLE_HR_ADMIN   = 'hr_admin';
     const ROLE_SUPERVISOR = 'supervisor';
-    const ROLE_LEADER = 'leader';
+    const ROLE_LEADER     = 'leader';
 
     /**
      * The attributes that are mass assignable.
@@ -50,7 +49,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
     }
 

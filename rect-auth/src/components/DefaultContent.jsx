@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Card,
-  CardContent,
   Alert,
 } from "@mui/material";
 import {
@@ -18,17 +11,12 @@ import {
   schoolApi,
   userApi,
   attendanceApi,
+  employeeApi,
 } from "../services/ApiService";
 import {
   BarChart,
   PieChart,
   LineChart,
-  ChartContainer,
-  ChartsXAxis,
-  ChartsYAxis,
-  BarPlot,
-  LinePlot,
-  MarkPlot,
 } from "@mui/x-charts";
 
 const DefaultContent = () => {
@@ -63,11 +51,12 @@ const DefaultContent = () => {
         const requests = [
           studentApi.getAll(),
           schoolApi.getAll(),
-          userApi.getAll(),
+          employeeApi.getAll(),
           attendanceApi.getAll(),
         ];
 
         const responses = await Promise.allSettled(requests);
+        console.log(responses);
 
         const studentData =
           responses[0].status === "fulfilled"
@@ -77,7 +66,7 @@ const DefaultContent = () => {
           responses[1].status === "fulfilled"
             ? responses[1].value.data?.data || []
             : [];
-        const userData =
+        const employeeData =
           responses[2].status === "fulfilled"
             ? responses[2].value.data?.data || []
             : [];
@@ -85,12 +74,6 @@ const DefaultContent = () => {
           responses[3].status === "fulfilled"
             ? responses[3].value.data?.data || []
             : [];
-
-        const employeeData = userData.filter(
-          (user) =>
-            user.role &&
-            ["employee", "hr_admin", "supervisor", "leader"].includes(user.role)
-        );
 
         const attendanceStatsCalc = attendanceData.reduce(
           (acc, a) => {
@@ -177,7 +160,12 @@ const DefaultContent = () => {
 
   return (
     <Box p={2}>
-      <Typography variant="h4" gutterBottom fontWeight="bold" sx={{marginBottom: 5}}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        fontWeight="bold"
+        sx={{ marginBottom: 5 }}
+      >
         ダッシュボード
       </Typography>
 
@@ -320,10 +308,11 @@ const DefaultContent = () => {
                   data: schoolDistribution.map((school, index) => ({
                     id: school.id,
                     value: school.value,
-                    label: `${school.label} (${school.value}人 / ${schoolTotal > 0
+                    label: `${school.label} (${school.value}人 / ${
+                      schoolTotal > 0
                         ? ((school.value / schoolTotal) * 100).toFixed(1)
                         : 0
-                      }%)`,
+                    }%)`,
                     color: [
                       "#4CAF50",
                       "#2196F3",

@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\SchoolRequest;
 use App\Models\School;
-use Illuminate\Support\Facades\Validator;
 
 class SchoolController extends Controller
 {
@@ -15,11 +12,11 @@ class SchoolController extends Controller
     public function index()
     {
         $schools = School::with(['students', 'employees'])
-                        ->get();
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $schools
+            'data'    => $schools,
         ]);
     }
 
@@ -33,7 +30,7 @@ class SchoolController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'School created successfully',
-            'data' => $school
+            'data'    => $school,
         ], 201);
     }
 
@@ -44,16 +41,16 @@ class SchoolController extends Controller
     {
         $school = School::with(['students', 'employees'])->find($id);
 
-        if (!$school) {
+        if (! $school) {
             return response()->json([
                 'success' => false,
-                'message' => 'School not found'
+                'message' => 'School not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $school
+            'data'    => $school,
         ]);
     }
 
@@ -64,10 +61,10 @@ class SchoolController extends Controller
     {
         $school = School::find($id);
 
-        if (!$school) {
+        if (! $school) {
             return response()->json([
                 'success' => false,
-                'message' => 'School not found'
+                'message' => 'School not found',
             ], 404);
         }
 
@@ -76,7 +73,7 @@ class SchoolController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'School updated successfully',
-            'data' => $school
+            'data'    => $school,
         ]);
     }
 
@@ -87,10 +84,10 @@ class SchoolController extends Controller
     {
         $school = School::find($id);
 
-        if (!$school) {
+        if (! $school) {
             return response()->json([
                 'success' => false,
-                'message' => 'School not found'
+                'message' => 'School not found',
             ], 404);
         }
 
@@ -98,7 +95,7 @@ class SchoolController extends Controller
         if ($school->students()->count() > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete school with existing students'
+                'message' => 'Cannot delete school with existing students',
             ], 422);
         }
 
@@ -106,7 +103,7 @@ class SchoolController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'School deleted successfully'
+            'message' => 'School deleted successfully',
         ]);
     }
 }

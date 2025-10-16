@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Exports;
 
 use App\Models\Student;
@@ -20,6 +19,7 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
             'ID',
             'School',
             'Roll No',
+            'Branch',
             'Name',
             'Email',
             'NRC No',
@@ -39,9 +39,10 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
             $student->id,
             $student->school ? $student->school->name : '',
             $student->roll_no,
+            $student->branch,
             $student->name,
             $student->email,
-            $student->nrc_no, // Fixed: was $student->nrc
+            $student->nrc_no,
             $student->phone,
             $student->major,
             $student->year,

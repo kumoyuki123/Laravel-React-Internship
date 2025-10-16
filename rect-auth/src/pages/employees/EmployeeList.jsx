@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -23,8 +23,8 @@ import {
   TablePagination,
   InputAdornment,
   Tooltip,
-  Grid
-} from '@mui/material';
+  Grid,
+} from "@mui/material";
 import {
   Edit,
   Delete,
@@ -32,15 +32,15 @@ import {
   Work,
   Person,
   School,
-  Psychology
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
-import { employeeApi } from '../../services/ApiService';
+  Psychology,
+} from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
+import { employeeApi } from "../../services/ApiService";
 import ErrorIcon from "@mui/icons-material/Error";
 
 export default function EmployeeList() {
   const { canManageEmployees } = useAuth();
-  
+
   // State management
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,22 +48,22 @@ export default function EmployeeList() {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Form state
   const [formData, setFormData] = useState({
-    jp_level: '',
-    skill_language: ''
+    jp_level: "",
+    skill_language: "",
   });
   const [formErrors, setFormErrors] = useState({});
-  
+
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success'
+    message: "",
+    severity: "success",
   });
 
   // Fetch employees on component mount
@@ -79,14 +79,14 @@ export default function EmployeeList() {
         setEmployees(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching employees:', error);
-      showSnackbar('Failed to fetch employees', 'error');
+      console.error("Error fetching employees:", error);
+      showSnackbar("Failed to fetch employees", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
@@ -98,8 +98,8 @@ export default function EmployeeList() {
   const handleOpenDialog = (employee) => {
     setEditingEmployee(employee);
     setFormData({
-      jp_level: employee.jp_level || '',
-      skill_language: employee.skill_language || ''
+      jp_level: employee.jp_level || "",
+      skill_language: employee.skill_language || "",
     });
     setFormErrors({});
     setOpenDialog(true);
@@ -109,8 +109,8 @@ export default function EmployeeList() {
     setOpenDialog(false);
     setEditingEmployee(null);
     setFormData({
-      jp_level: '',
-      skill_language: ''
+      jp_level: "",
+      skill_language: "",
     });
     setFormErrors({});
   };
@@ -119,21 +119,22 @@ export default function EmployeeList() {
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
     if (formErrors[field]) {
-      setFormErrors({ ...formErrors, [field]: '' });
+      setFormErrors({ ...formErrors, [field]: "" });
     }
   };
 
   const handleSubmit = async () => {
     try {
       await employeeApi.update(editingEmployee.id, formData);
-      showSnackbar('従業員が正常に更新されました。');
+      showSnackbar("正社員が正常に更新されました。");
       fetchEmployees();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error updating employee:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update employee';
-      showSnackbar(errorMessage, 'error');
-      
+      console.error("Error updating employee:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to update employee";
+      showSnackbar(errorMessage, "error");
+
       if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
       }
@@ -149,12 +150,13 @@ export default function EmployeeList() {
   const handleDeleteConfirm = async () => {
     try {
       await employeeApi.delete(employeeToDelete.id);
-      showSnackbar('従業員が正常に削除されました。');
+      showSnackbar("正社員が正常に削除されました。");
       fetchEmployees();
     } catch (error) {
-      console.error('Error deleting employee:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete employee';
-      showSnackbar(errorMessage, 'error');
+      console.error("Error deleting employee:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete employee";
+      showSnackbar(errorMessage, "error");
     } finally {
       setDeleteConfirmOpen(false);
       setEmployeeToDelete(null);
@@ -167,11 +169,12 @@ export default function EmployeeList() {
   };
 
   // Filter employees based on search term
-  const filteredEmployees = employees.filter(employee =>
-    employee.student?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.school?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.jp_level?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.skill_language?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      employee.student?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.school?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.jp_level?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.skill_language?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination
@@ -184,6 +187,11 @@ export default function EmployeeList() {
     setPage(0);
   };
 
+  const branchMap = {
+    mdy: "Mandalay",
+    ygn: "Yangon",
+  };
+
   const paginatedEmployees = filteredEmployees.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -191,8 +199,13 @@ export default function EmployeeList() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography>Loading employees...</Typography>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <Typography>正社員を読み込み中...</Typography>
       </Box>
     );
   }
@@ -200,11 +213,16 @@ export default function EmployeeList() {
   return (
     <Box p={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Box display="flex" alignItems="center" gap={2}>
           <Work color="primary" sx={{ fontSize: 40 }} />
           <Typography variant="h4" component="h1">
-            従業員管理
+            正社員管理
           </Typography>
         </Box>
       </Box>
@@ -231,55 +249,92 @@ export default function EmployeeList() {
       <TableContainer component={Paper} elevation={2}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>学生名</strong></TableCell>
-              <TableCell><strong>大学名</strong></TableCell>
-              <TableCell><strong>IQスコア</strong></TableCell>
-              <TableCell><strong>日本語レベル</strong></TableCell>
-              <TableCell><strong>プログラム言語</strong></TableCell>
-              <TableCell><strong>作成日</strong></TableCell>
-              {canManageEmployees() && <TableCell><strong>アクション</strong></TableCell>}
+            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableCell>
+                <strong>ID</strong>
+              </TableCell>
+              <TableCell>
+                <strong>学生名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>大学名</strong>
+              </TableCell>
+              <TableCell>
+                <strong>勤務先</strong>
+              </TableCell>
+              <TableCell>
+                <strong>IQスコア</strong>
+              </TableCell>
+              <TableCell>
+                <strong>日本語レベル</strong>
+              </TableCell>
+              <TableCell>
+                <strong>プログラム言語</strong>
+              </TableCell>
+              <TableCell>
+                <strong>作成日</strong>
+              </TableCell>
+              {canManageEmployees() && (
+                <TableCell>
+                  <strong>アクション</strong>
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
             {paginatedEmployees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canManageEmployees() ? 7 : 6} align="center">
+                <TableCell
+                  colSpan={canManageEmployees() ? 7 : 6}
+                  align="center"
+                >
                   <Typography color="textSecondary" py={4}>
-                    {searchTerm ? '検索条件に一致する従業員は見つかりませんでした。': '利用可能な従業員がいません。'}
+                    {searchTerm
+                      ? "検索条件に一致する正社員は見つかりませんでした。"
+                      : "利用可能な正社員がいません。"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               paginatedEmployees.map((employee) => (
                 <TableRow key={employee.id} hover>
-                  <TableCell>
-                    {employee.id}
-                  </TableCell>
+                  <TableCell>{employee.id}</TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Person fontSize="small" />
                       <Typography variant="subtitle2" fontWeight="bold">
-                        {employee.student?.name || 'N/A'}
+                        {employee.student?.name || "N/A"}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
                       icon={<School />}
-                      label={employee.school?.name || 'N/A'}
+                      label={employee.school?.name || "N/A"}
                       size="small"
                       color="primary"
                       variant="outlined"
                     />
                   </TableCell>
                   <TableCell>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {branchMap[employee.student?.branch] || "N/A"}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
                     <Chip
                       icon={<Psychology />}
                       label={`${employee.iq_score}/100`}
                       size="small"
-                      color={employee.iq_score >= 80 ? 'success' : employee.iq_score >= 70 ? 'info' : 'warning'}
+                      color={
+                        employee.iq_score >= 80
+                          ? "success"
+                          : employee.iq_score >= 70
+                          ? "info"
+                          : "warning"
+                      }
                       variant="filled"
                     />
                   </TableCell>
@@ -314,7 +369,7 @@ export default function EmployeeList() {
                   {canManageEmployees() && (
                     <TableCell>
                       <Box display="flex" gap={1}>
-                        <Tooltip title="従業員のスキルを編集する">
+                        <Tooltip title="正社員のスキルを編集する">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenDialog(employee)}
@@ -323,7 +378,7 @@ export default function EmployeeList() {
                             <Edit />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="従業員を削除">
+                        <Tooltip title="正社員を削除">
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteClick(employee)}
@@ -340,7 +395,7 @@ export default function EmployeeList() {
             )}
           </TableBody>
         </Table>
-        
+
         {/* Pagination */}
         <TablePagination
           component="div"
@@ -354,24 +409,38 @@ export default function EmployeeList() {
       </TableContainer>
 
       {/* Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ textAlign: 'center', fontSize: 24, fontWeight: 'bold', pb: 1 }}>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{ textAlign: "center", fontSize: 24, fontWeight: "bold", pb: 1 }}
+        >
           スキル編集 - {editingEmployee?.student?.name}
         </DialogTitle>
         <DialogContent>
           <Box pt={1}>
             {/* Student Info Section */}
-            <Box sx={{ 
-              backgroundColor: 'rgba(0, 0, 0, 0.04)', 
-              p: 2, 
-              borderRadius: 1, 
-              mb: 3,
-              border: '1px solid rgba(0, 0, 0, 0.12)'
-            }}>
-              <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{fontSize:20}}>
+            <Box
+              sx={{
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+                p: 2,
+                borderRadius: 1,
+                mb: 3,
+                border: "1px solid rgba(0, 0, 0, 0.12)",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                gutterBottom
+                sx={{ fontSize: 20 }}
+              >
                 学生情報
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                 <Typography variant="body2">
                   <strong>名前:</strong> {editingEmployee?.student?.name}
                 </Typography>
@@ -391,9 +460,9 @@ export default function EmployeeList() {
                 select
                 label="日本語レベル"
                 value={formData.jp_level}
-                onChange={(e) => handleInputChange('jp_level', e.target.value)}
+                onChange={(e) => handleInputChange("jp_level", e.target.value)}
                 error={!!formErrors.jp_level}
-                helperText={formErrors.jp_level ? formErrors.jp_level[0] : ''}
+                helperText={formErrors.jp_level ? formErrors.jp_level[0] : ""}
                 SelectProps={{
                   native: true,
                 }}
@@ -415,20 +484,26 @@ export default function EmployeeList() {
                 multiline
                 rows={4}
                 value={formData.skill_language}
-                onChange={(e) => handleInputChange('skill_language', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("skill_language", e.target.value)
+                }
                 error={!!formErrors.skill_language}
-                helperText={formErrors.skill_language ? formErrors.skill_language[0] : '例: PHP, JavaScript, Python, React, Laravel'}
+                helperText={
+                  formErrors.skill_language
+                    ? formErrors.skill_language[0]
+                    : "例: PHP, JavaScript, Python, React, Laravel"
+                }
                 placeholder="プログラミング言語、フレームワーク、技術スキルを入力..."
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    alignItems: 'flex-start'
-                  }
+                  "& .MuiOutlinedInput-root": {
+                    alignItems: "flex-start",
+                  },
                 }}
               />
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 3 }}>
+        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
           <Button
             variant="contained"
             sx={{
@@ -439,9 +514,9 @@ export default function EmployeeList() {
           >
             キャンセル
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained" 
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
             sx={{ minWidth: 100 }}
           >
             更新する
@@ -465,9 +540,10 @@ export default function EmployeeList() {
         <DialogContent>
           {" "}
           <DialogContentText component="div" className="text-center">
-            学生『{employeeToDelete?.student?.name}』を削除してもよろしいですか？
+            学生『{employeeToDelete?.student?.name}
+            』を削除してもよろしいですか？
             <br />
-            これにより、関連する従業員および出席記録も削除されます。
+            これにより、関連する正社員および出席記録も削除されます。
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", gap: 2, p: 3 }}>
@@ -497,7 +573,7 @@ export default function EmployeeList() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={handleCloseSnackbar}

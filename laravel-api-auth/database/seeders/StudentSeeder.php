@@ -15,11 +15,8 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create additional test students for all schools
         $schools = School::all();
-        
         foreach ($schools as $school) {
-            // Create a student with high IQ (will become employee)
             $highIqStudent = Student::create([
                 'school_id' => $school->id,
                 'roll_no' => 'S' . $school->id . '001',
@@ -32,7 +29,6 @@ class StudentSeeder extends Seeder
                 'iq_score' => 75,
             ]);
 
-            // Auto-create employee for high IQ student
             Employee::create([
                 'student_id' => $highIqStudent->id,
                 'school_id' => $highIqStudent->school_id,
@@ -41,7 +37,6 @@ class StudentSeeder extends Seeder
                 'skill_language' => 'PHP, JavaScript',
             ]);
 
-            // Create a student with low IQ (will not become employee)
             Student::create([
                 'school_id' => $school->id,
                 'roll_no' => 'S' . $school->id . '002',

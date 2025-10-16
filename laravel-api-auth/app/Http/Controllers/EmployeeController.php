@@ -1,9 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class EmployeeController extends Controller
@@ -14,11 +13,11 @@ class EmployeeController extends Controller
     public function index()
     {
         $employees = Employee::with(['student', 'school'])
-                           ->get();
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $employees
+            'data'    => $employees,
         ]);
     }
 
@@ -29,16 +28,16 @@ class EmployeeController extends Controller
     {
         $employee = Employee::with(['student', 'school'])->find($id);
 
-        if (!$employee) {
+        if (! $employee) {
             return response()->json([
                 'success' => false,
-                'message' => 'Employee not found'
+                'message' => 'Employee not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $employee
+            'data'    => $employee,
         ]);
     }
 
@@ -49,22 +48,22 @@ class EmployeeController extends Controller
     {
         $employee = Employee::find($id);
 
-        if (!$employee) {
+        if (! $employee) {
             return response()->json([
                 'success' => false,
-                'message' => 'Employee not found'
+                'message' => 'Employee not found',
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'jp_level' => 'nullable|string|max:50',
-            'skill_language' => 'nullable|string|max:255'
+            'jp_level'       => 'nullable|string|max:50',
+            'skill_language' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -76,7 +75,7 @@ class EmployeeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Employee updated successfully',
-            'data' => $employee
+            'data'    => $employee,
         ]);
     }
 
@@ -87,10 +86,10 @@ class EmployeeController extends Controller
     {
         $employee = Employee::find($id);
 
-        if (!$employee) {
+        if (! $employee) {
             return response()->json([
                 'success' => false,
-                'message' => 'Employee not found'
+                'message' => 'Employee not found',
             ], 404);
         }
 
@@ -98,7 +97,7 @@ class EmployeeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Employee deleted successfully'
+            'message' => 'Employee deleted successfully',
         ]);
     }
 }

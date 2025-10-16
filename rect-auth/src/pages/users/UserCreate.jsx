@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Paper,
   TextField,
@@ -10,37 +10,37 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress
-} from '@mui/material';
-import { userApi } from '../../services/ApiService';
-import { useNavigate } from 'react-router-dom';
+  CircularProgress,
+} from "@mui/material";
+import { userApi } from "../../services/ApiService";
+import { useNavigate } from "react-router-dom";
 
 export default function UserCreate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'leader'
+    name: "",
+    email: "",
+    password: "",
+    role: "leader",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[name]) {
-      setFieldErrors(prev => ({
+      setFieldErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -48,43 +48,46 @@ export default function UserCreate() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setFieldErrors({});
 
     try {
       const response = await userApi.create(formData);
-      
+
       if (response.data.success) {
-        setSuccess('User created successfully!');
+        setSuccess("User created successfully!");
         // Reset form
         setFormData({
-          name: '',
-          email: '',
-          password: '',
-          role: 'leader'
+          name: "",
+          email: "",
+          password: "",
+          role: "leader",
         });
-        
+
         // Redirect to user list after 2 seconds
         setTimeout(() => {
-          navigate('/dashboard/userList');
+          navigate("/dashboard/userList");
         }, 2000);
       } else {
-        setError(response.data.message || 'Failed to create user');
+        setError(response.data.message || "Failed to create user");
       }
     } catch (error) {
-      console.error('User creation error:', error);
-      
+      console.error("User creation error:", error);
+
       // Handle Laravel validation errors (422 status)
       if (error.response?.status === 422 && error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
-        setError(error.response.data.message || 'Validation failed. Please check your input.');
+        setError(
+          error.response.data.message ||
+            "Validation failed. Please check your input."
+        );
       } else if (error.response?.data?.message) {
         // Handle other API errors
         setError(error.response.data.message);
       } else {
         // Handle network or other errors
-        setError('Failed to create user. Please try again.');
+        setError("Failed to create user. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -94,13 +97,18 @@ export default function UserCreate() {
   return (
     <Box p={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4" component="h1">
           新しいユーザー作成
         </Typography>
         <Button
           variant="outlined"
-          onClick={() => navigate('/dashboard/userList')}
+          onClick={() => navigate("/dashboard/userList")}
           disabled={loading}
         >
           戻る

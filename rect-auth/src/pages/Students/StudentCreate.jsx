@@ -33,6 +33,7 @@ export default function StudentCreate() {
   const [formData, setFormData] = useState({
     school_id: "",
     roll_no: "",
+    branch: "mdy", // Default to Mandalay
     name: "",
     email: "",
     phone: "",
@@ -144,14 +145,31 @@ export default function StudentCreate() {
           <TextField
             fullWidth
             label="ロール番号"
-            name="roll_no"
             value={formData.roll_no}
             onChange={handleChange}
             margin="normal"
             error={!!fieldErrors.roll_no}
             helperText={fieldErrors.roll_no}
           />
-
+          <FormControl fullWidth error={!!fieldErrors.branch}>
+            <InputLabel id="branch-label">Branch</InputLabel>
+            <Select
+              labelId="branch-label"
+              name="branch"
+              value={formData.branch}
+              label="Branch"
+              onChange={handleChange}
+              required
+            >
+              <MenuItem value="mdy">Mandalay</MenuItem>
+              <MenuItem value="ygn">Yangon</MenuItem>
+            </Select>
+            {fieldErrors.branch && (
+              <Typography color="error" variant="caption">
+                {fieldErrors.branch}
+              </Typography>
+            )}
+          </FormControl>
           <TextField
             fullWidth
             label="名前"
@@ -222,14 +240,14 @@ export default function StudentCreate() {
                   ))}
                 </Select>
               </FormControl>
-                <TextField
-                  fullWidth
-                  label="Number"
-                  name="nrcNumber"
-                  value={nrc.nrcNumber}
-                  onChange={handleNrcChange}
-                  inputProps={{ maxLength: 6 }}
-                />
+              <TextField
+                fullWidth
+                label="Number"
+                name="nrcNumber"
+                value={nrc.nrcNumber}
+                onChange={handleNrcChange}
+                inputProps={{ maxLength: 6 }}
+              />
             </Box>
             {fieldErrors.nrc_no && (
               <Typography color="error" variant="caption">

@@ -22,7 +22,7 @@ const ChangePassword = () => {
     new_password_confirmation: "",
   });
 
-  const [errors, setErrors] = useState({}); // field-specific errors
+  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,7 @@ const ChangePassword = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setErrors({}); // clear old errors
+    setErrors({});
     setSuccess("");
   };
 
@@ -51,7 +51,9 @@ const ChangePassword = () => {
         }, 2000);
       } else {
         // Laravel sometimes sends message only
-        setErrors({ general: response.data.message || "パスワードの変更に失敗しました" });
+        setErrors({
+          general: response.data.message || "パスワードの変更に失敗しました",
+        });
       }
     } catch (error) {
       if (error.response?.status === 422) {

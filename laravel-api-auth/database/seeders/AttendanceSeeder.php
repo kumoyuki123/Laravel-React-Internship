@@ -19,12 +19,11 @@ class AttendanceSeeder extends Seeder
         $statuses = ['present', 'absent', 'late'];
         
         foreach ($students as $student) {
-            // Create attendance records for the last 30 days
+            // Create attendance records for 30 days
             for ($i = 0; $i < 30; $i++) {
                 $date = Carbon::now()->subDays($i)->format('Y-m-d');
                 $status = $statuses[array_rand($statuses)];
-                
-                // Skip weekends
+
                 $dayOfWeek = Carbon::parse($date)->dayOfWeek;
                 if ($dayOfWeek == Carbon::SATURDAY || $dayOfWeek == Carbon::SUNDAY) {
                     continue;
@@ -32,9 +31,9 @@ class AttendanceSeeder extends Seeder
                 
                 $checkInTime = null;
                 if ($status === 'present') {
-                    $checkInTime = '08:' . rand(0, 59) . ':' . rand(0, 59);
+                    $checkInTime = '07:' . rand(0, 59) . ':' . rand(0, 59);
                 } elseif ($status === 'late') {
-                    $checkInTime = '09:' . rand(0, 59) . ':' . rand(0, 59);
+                    $checkInTime = '08:' . rand(0, 59) . ':' . rand(0, 59);
                 }
                 
                 Attendence::create([
